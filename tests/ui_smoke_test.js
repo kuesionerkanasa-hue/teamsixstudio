@@ -6,7 +6,7 @@ const OUT = process.argv[2];
 const UMD = fs.readFileSync('/tmp/sbchk/package/dist/umd/supabase.js');
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR4nGOYNm0BVsQwtCQA7NxzAUwYzrgAAAAASUVORK5CYII=', 'base64');
 const frames = [['bubble-pop', 'Bubble Pop', '#FA78CF'], ['cyber-grid', 'Cyber Grid', '#C9FF38'], ['chrome-kiss', 'Chrome Kiss', '#84AEF8'], ['sugar-rush', 'Sugar Rush', '#FFE36C'], ['violet-web', 'Violet Web', '#C8A1FF'], ['tangerine', 'Tangerine', '#FF9858'], ['liquid-metal', 'Liquid Metal', '#C8CDD5'], ['cherry-byte', 'Cherry Byte', '#FF5E6C']]
-  .map(([id, name, bg], i) => ({ id, name, bg, border: '#17151C', accent: '#17151C', text_color: '#17151C', star: '#FFE36C', shadow: '#17151C', radius: 0, pattern: 'none', sort_order: i + 1, is_active: true }));
+  .map(([id, name, bg], i) => ({ id, name, bg, border: '#17151C', accent: '#17151C', text_color: '#17151C', star: '#FFE36C', shadow: '#17151C', radius: 0, pattern: 'none', sort_order: i + 1, is_active: true, ...([{ layout: 'collage', decor: 'mix', big_shape: 'star', halftone: true, pattern: 'dots', deco1: '#FA78CF', deco2: '#FFFFFF' }, { layout: 'booth', decor: 'buttons', halftone: true, pattern: 'gingham', deco1: '#84AEF8', deco2: '#FFFFFF' }, { layout: 'collage', decor: 'stars', big_shape: 'burst', pattern: 'grid', deco1: '#FFE36C', deco2: '#FA78CF' }, { layout: 'booth', decor: 'bows', pattern: 'checker', deco1: '#FA78CF', deco2: '#FFE36C' }][i] || {}) }));
 const people = [['anisa-fatimah', 'Anisa Fatimah', '@nolvless_00', 'Farfalla', 'Living on cloud nine; serene'], ['arjunna', 'Arjunna', '@2007.arj', null, 'Dreams over doubts'], ['leni-vale', 'Leni Vale', '@leni.mp3', null, 'Main character energy'], ['faye-bloom', 'Faye Bloom', '@faye.bloom', null, 'Sweet but offline'], ['ivo-day', 'Ivo Day', '@ivo.day', null, 'A little magic in the margins'], ['jess-melo', 'Jess Melo', '@jess.zip', null, 'Too bright to hide'], ['santi-noor', 'Santi Noor', '@santi.sys', null, 'Future nostalgia'], ['kira-nova', 'Kira Nova', '@kira.exe', null, 'Glitter in the cache']];
 let gallery = people.map(([slug, display_name, handle, energy_label, mood_quote], i) => ({ id: '00000000-0000-4000-8000-00000000000' + (i + 1), slug, display_name, handle, energy_label, mood_quote, photo_url: i === 0 ? 'https://photos.test/a.png' : null, frame_id: frames[i].id, status: 'published', sort_order: i + 1, created_at: '2026-10-20T10:00:00Z', vote_count: 0, comment_count: 0, voted: false }));
 let comments = [];
@@ -70,7 +70,7 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   ok('galeri: hitungan nyata 01 / 08', (await page.textContent('#gallery-count')).trim() === '01 / 08 PLAYERS');
   ok('teks border asli "Farfalla" tampil, lainnya kosong', (await page.locator('#gallery-track .energy-name').allTextContents()).filter(Boolean).join() === 'Farfalla');
   ok('tidak ada tag ONLINE palsu', (await page.locator('text=ONLINE').count()) === 0);
-  ok('foto https dimuat, lainnya placeholder', (await page.locator('#gallery-track .arch img').count()) === 1 && (await page.locator('#gallery-track .no-photo').count()) === 7);
+  ok('foto https dimuat, lainnya placeholder', (await page.locator('#gallery-track .arch img').count()) === 1 && (await page.locator('#gallery-track .no-photo').count()) === 9);
   ok('spotlight: empty-state jujur saat 0 vote', /No votes yet/.test(await page.textContent('#spot-body')));
   ok('tidak ada badge saat 0 vote/komentar', (await page.locator('.tag.fav, .tag.disc, .tag.spot').count()) === 0);
   ok('komentar: empty state', /No comments yet/.test(await page.textContent('#comment-area')));
@@ -121,6 +121,7 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('#download-look')]);
   ok('unduh PNG postcard berjalan', !!dl && /postcard-.*\.png$/.test(dl.suggestedFilename()), dl ? dl.suggestedFilename() : 'no download');
   if (dl) { await dl.saveAs(OUT + '/exported-postcard.png'); }
+  ok('stiker Y2K tampil di kartu', (await page.locator('#gallery-track .decor .sticker').count()) >= 8);
   ok('QR kecil ada di setiap kartu galeri', (await page.locator('#gallery-track .profile-card .qr-chip img').count()) >= 8);
 
   // ---------- Admin: password salah / bukan admin / admin ----------
@@ -149,7 +150,7 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   }
   // Frame Studio
   await page.click('.admin-nav button:has-text("FRAME STUDIO")'); await page.waitForSelector('.studio .color-row');
-  ok('studio: 6 kontrol warna + hex', (await page.locator('.color-row').count()) === 6);
+  ok('studio: 8 kontrol warna + hex', (await page.locator('.color-row').count()) === 8);
   ok('studio: Save nonaktif sebelum ada perubahan', await page.locator('button:has-text("SAVE CHANGES")').isDisabled());
   await page.locator('.color-row').nth(1).locator('input[type=text]').fill('#84AEF8');
   ok('studio: Save aktif setelah warna border diubah (draft)', await page.locator('button:has-text("SAVE CHANGES")').isEnabled());

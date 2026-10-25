@@ -83,7 +83,7 @@ select t.login((select id from t.u where name='admin')); select public.ef_ensure
 
 -- ---------- A. DATA AWAL TERJAGA ----------
 select t.expect_val('seed: 8 profil asli', $q$select count(*) from public.ef_profiles$q$, '8');
-select t.expect_val('seed: 8 frame preset asli', $q$select count(*) from public.ef_frames$q$, '8');
+select t.expect_val('seed: 14 frame (8 asli + 6 Y2K)', $q$select count(*) from public.ef_frames$q$, '14');
 select t.expect_val('seed: nama/username/mood tidak berubah',
   $q$select count(*) from public.ef_profiles where (slug,display_name,handle,mood_quote) in (
      ('anisa-fatimah','Anisa Fatimah','@nolvless_00','Living on cloud nine; serene'),
@@ -118,7 +118,7 @@ select t.expect_val('fungsi: authenticated tak bisa trigger fn komentar', $q$sel
 select t.visitor();
 select t.expect_val('anon: lihat 8 profil published', $q$select count(*) from public.ef_profiles$q$, '8');
 select t.expect_val('anon: ef_gallery 8 baris', $q$select count(*) from public.ef_gallery()$q$, '8');
-select t.expect_val('anon: lihat 8 frame', $q$select count(*) from public.ef_frames$q$, '8');
+select t.expect_val('anon: lihat 14 frame', $q$select count(*) from public.ef_frames$q$, '14');
 select t.expect_val('anon: bisa baca settings', $q$select count(*) from public.ef_settings$q$, '1');
 select t.expect_err('anon: tidak bisa baca ef_votes', $q$select * from public.ef_votes$q$, array['42501']);
 select t.expect_err('anon: tidak bisa vote', $q$insert into public.ef_votes(profile_id,user_id) values ((select id from t.u where name='p:arjunna'), (select id from t.u where name='m1'))$q$, array['42501']);
@@ -188,6 +188,13 @@ select t.expect_val('admin: audit mencatat frame + admin', $q$select count(*) fr
 select t.expect_err('validasi: warna bukan hex ditolak', $q$update public.ef_frames set bg='red; background:url(x)' where id='bubble-pop'$q$, array['23514']);
 select t.expect_err('validasi: warna 3-digit ditolak', $q$update public.ef_frames set bg='#fff' where id='bubble-pop'$q$, array['23514']);
 select t.expect_err('validasi: radius di luar batas', $q$update public.ef_frames set radius=99 where id='bubble-pop'$q$, array['23514']);
+select t.expect_rows('admin: ubah layout/decor/halftone frame', $q$update public.ef_frames set layout='booth', decor='bows', big_shape='heart', halftone=true, deco1='#FA78CF', deco2='#FFFFFF', pattern='gingham' where id='photobooth'$q$, 1);
+select t.expect_err('validasi: layout liar ditolak', $q$update public.ef_frames set layout='<script>' where id='photobooth'$q$, array['23514']);
+select t.expect_err('validasi: decor liar ditolak', $q$update public.ef_frames set decor='x' where id='photobooth'$q$, array['23514']);
+select t.expect_err('validasi: big_shape liar ditolak', $q$update public.ef_frames set big_shape='x' where id='photobooth'$q$, array['23514']);
+select t.expect_err('validasi: deco1 bukan hex ditolak', $q$update public.ef_frames set deco1='red' where id='photobooth'$q$, array['23514']);
+select t.expect_err('validasi: deco2 bukan hex ditolak', $q$update public.ef_frames set deco2='url(x)' where id='photobooth'$q$, array['23514']);
+select t.expect_err('validasi: pola liar ditolak', $q$update public.ef_frames set pattern='zigzag' where id='photobooth'$q$, array['23514']);
 select t.expect_err('validasi: pattern tak dikenal', $q$update public.ef_frames set pattern='x' where id='bubble-pop'$q$, array['23514']);
 select t.expect_err('validasi: photo_url javascript: ditolak', $q$update public.ef_profiles set photo_url='javascript:alert(1)' where slug='arjunna'$q$, array['23514']);
 select t.expect_rows('admin: set photo_url https', $q$update public.ef_profiles set photo_url='https://example.com/a.jpg' where slug='arjunna'$q$, 1);
@@ -196,7 +203,7 @@ select t.expect_err('integritas: frame yang dipakai tak bisa dihapus', $q$delete
 select t.expect_rows('admin: duplikat frame', $q$insert into public.ef_frames(id,name,bg) select 'bubble-pop-copy','Bubble Pop Copy',bg from public.ef_frames where id='bubble-pop'$q$, 1);
 select t.expect_rows('admin: ubah sort_order profil', $q$update public.ef_profiles set sort_order=sort_order where slug='arjunna'$q$, 1);
 select t.expect_val('audit: update non-status profil tidak dicatat', $q$select count(*) from public.ef_audit where action='profiles.update'$q$, '0');
-select t.expect_rows('admin: baca audit', $q$select * from public.ef_audit$q$, 2);
+select t.expect_rows('admin: baca audit', $q$select * from public.ef_audit$q$, 3);
 select t.expect_rows('storage: admin boleh upload foto', $q$insert into storage.objects(bucket_id,name) values ('ef-photos','a.png')$q$, 1);
 select t.back();
 select t.login((select id from t.u where name='m1'));

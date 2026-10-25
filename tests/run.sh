@@ -11,6 +11,9 @@ echo "== jalankan 01_schema.sql (pertama)"
 psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/01_schema.sql 2>&1 | grep -v '^NOTICE' || true
 echo "== jalankan 01_schema.sql (kedua: harus idempoten)"
 psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/01_schema.sql 2>&1 | grep -v '^NOTICE' || true
+echo "== jalankan 03_y2k_frames.sql (dua kali: harus idempoten)"
+psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/03_y2k_frames.sql 2>&1 | grep -v '^NOTICE' || true
+psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/03_y2k_frames.sql 2>&1 | grep -v '^NOTICE' || true
 psql -qX -d $DB -Atc "select 'profil='||count(*) from public.ef_profiles union all select 'frame='||count(*) from public.ef_frames union all select 'settings='||count(*) from public.ef_settings"
 echo "== uji RLS"
 psql -qX -d $DB -f tests/rls_tests.sql

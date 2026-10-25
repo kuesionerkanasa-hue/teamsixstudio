@@ -28,8 +28,10 @@ function h(tag, props = {}, ...kids) {
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const safeHex = (v, fb) => (typeof v === 'string' && HEX.test(v)) ? v : fb;
 const SLUG = /^[a-z0-9-]{2,60}$/;
-const DEF_FRAME = { bg: '#FA78CF', border: '#17151C', accent: '#17151C', text_color: '#17151C', star: '#FFE36C', shadow: '#17151C', radius: 0, pattern: 'none' };
-const PATTERNS = ['none', 'grid', 'dots', 'stripes'];
+const DEF_FRAME = { bg: '#FA78CF', border: '#17151C', accent: '#17151C', text_color: '#17151C', star: '#FFE36C', shadow: '#17151C', radius: 0, pattern: 'none',
+  layout: 'classic', decor: 'none', big_shape: 'none', halftone: false, deco1: '#FA78CF', deco2: '#84AEF8' };
+const PATTERNS = ['none', 'grid', 'dots', 'stripes', 'gingham', 'checker'];
+const LAYOUTS = ['classic', 'collage', 'booth'], DECORS = ['none', 'stars', 'hearts', 'buttons', 'bows', 'mix'], BIGS = ['none', 'star', 'heart', 'burst'];
 
 function normFrame(f) {
   f = f || {};
@@ -39,7 +41,10 @@ function normFrame(f) {
     accent: safeHex(f.accent, DEF_FRAME.accent), text_color: safeHex(f.text_color, DEF_FRAME.text_color),
     star: safeHex(f.star, DEF_FRAME.star), shadow: safeHex(f.shadow, DEF_FRAME.shadow),
     radius: Math.min(32, Math.max(0, parseInt(f.radius, 10) || 0)),
-    pattern: PATTERNS.includes(f.pattern) ? f.pattern : 'none'
+    pattern: PATTERNS.includes(f.pattern) ? f.pattern : 'none',
+    layout: LAYOUTS.includes(f.layout) ? f.layout : 'classic', decor: DECORS.includes(f.decor) ? f.decor : 'none',
+    big_shape: BIGS.includes(f.big_shape) ? f.big_shape : 'none', halftone: f.halftone === true,
+    deco1: safeHex(f.deco1, DEF_FRAME.deco1), deco2: safeHex(f.deco2, DEF_FRAME.deco2)
   };
 }
 function applyFrame(el, frame) {
@@ -93,7 +98,7 @@ const state = {
   user: null, myName: null, isAdmin: false, dbReady: true,
   comments: [], commentsDone: false, commentsLoading: false, commentsFor: null
 };
-const EFS = window.EFS = { sb, state, h, $, pad, toast, errMsg, safeHex, normFrame, applyFrame, httpsUrl, timeAgo, fmtDate, DEF_FRAME, PATTERNS, SLUG, CFG };
+const EFS = window.EFS = { sb, state, h, $, pad, toast, errMsg, safeHex, normFrame, applyFrame, httpsUrl, timeAgo, fmtDate, DEF_FRAME, PATTERNS, LAYOUTS, DECORS, BIGS, SLUG, CFG };
 
 const frameOf = id => state.frames.get(id) || normFrame(null);
 const cardBySlug = s => state.cards.find(c => c.slug === s);
@@ -353,7 +358,12 @@ function postcard(card, opts = {}) {
   const frame = opts.frame || frameOf(card.frame_id);
   const el = h('article', { class: 'profile-card' + (opts.selectable ? ' is-selectable' : '') + (opts.selected ? ' is-selected' : ''), dataset: { slug: card.slug } });
   applyFrame(el, frame);
-  const shell = h('div', { class: 'portrait-shell', dataset: { pattern: normFrame(frame).pattern } }, photoNode(card),
+  const F = normFrame(frame), D = window.EFS_DECOR;
+  const shell = h('div', { class: 'portrait-shell', dataset: { pattern: F.pattern, layout: F.layout, halftone: F.halftone ? '1' : '0' } },
+    D ? D.layer(F, 'back') : null,
+    F.layout === 'booth' ? h('div', { class: 'booth' }, photoNode(card), photoNode(card)) : photoNode(card),
+    F.layout === 'collage' ? h('div', { class: 'paper-tag', text: (card.display_name || '').toUpperCase() }) : null,
+    D ? D.layer(F, 'front') : null,
     h('div', { class: 'portrait-bottom' },
       h('div', { class: 'badges' }, badgesFor(card).map(([t, c]) => h('span', { class: 'tag ' + c, text: t }))),
       opts.detail ? null : voteButton(card)));
@@ -695,24 +705,48 @@ async function renderPostcardCanvas(card, frame) {
   if (F.pattern === 'grid') { for (let i = sx; i < sx + sw; i += 36) { x.beginPath(); x.moveTo(i, sy); x.lineTo(i, sy + sh); x.stroke(); } for (let j = sy; j < sy + sh; j += 36) { x.beginPath(); x.moveTo(sx, j); x.lineTo(sx + sw, j); x.stroke(); } }
   if (F.pattern === 'dots') for (let i = sx + 16; i < sx + sw; i += 32) for (let j = sy + 16; j < sy + sh; j += 32) { x.beginPath(); x.arc(i, j, 3, 0, 7); x.fill(); }
   if (F.pattern === 'stripes') for (let i = -sh; i < sw; i += 34) { x.beginPath(); x.moveTo(sx + i, sy + sh); x.lineTo(sx + i + sh, sy); x.lineTo(sx + i + sh + 16, sy); x.lineTo(sx + i + 16, sy + sh); x.fill(); }
+  if (F.pattern === 'gingham') { x.fillStyle = 'rgba(255,255,255,.38)'; for (let j = 0; j < sh; j += 40) x.fillRect(sx, sy + j, sw, 20); for (let i = 0; i < sw; i += 40) x.fillRect(sx + i, sy, 20, sh); }
+  if (F.pattern === 'checker') { x.fillStyle = 'rgba(23,21,28,.09)'; for (let i = 0; i * 34 < sw; i++) for (let j = 0; j * 34 < sh; j++) if ((i + j) % 2) x.fillRect(sx + i * 34, sy + j * 34, 34, 34); }
+  const DC = window.EFS_DECOR, box = { x: sx, y: sy, w: sw, h: sh };
+  if (DC) DC.draw(x, F, box, 'back');
   x.restore();
   rr(sx, sy, sw, sh, F.radius); x.lineWidth = 4; x.strokeStyle = F.border; x.stroke();
-  // lengkung foto
-  const ax = sx + 44, ay = sy + 96, aw = sw - 88, ah = sh - 140, ry = ah * 0.34;
-  const arch = () => { x.beginPath(); x.moveTo(ax, ay + ah - 4); x.lineTo(ax, ay + ry); x.ellipse(ax + aw / 2, ay + ry, aw / 2, ry, 0, Math.PI, Math.PI * 2); x.lineTo(ax + aw, ay + ah - 4); x.quadraticCurveTo(ax + aw, ay + ah, ax + aw - 4, ay + ah); x.lineTo(ax + 4, ay + ah); x.quadraticCurveTo(ax, ay + ah, ax, ay + ah - 4); x.closePath(); };
-  arch(); const g = x.createLinearGradient(ax, ay, ax + aw, ay + ah); g.addColorStop(0, '#e9e7df'); g.addColorStop(1, '#b8b5ad'); x.fillStyle = g; x.fill();
-  x.save(); arch(); x.clip();
-  if (photo) {
-    const r = Math.max(aw / photo.width, ah / photo.height), dw = photo.width * r, dh = photo.height * r;
-    x.drawImage(photo, ax + (aw - dw) / 2, ay + (ah - dh) * 0.3, dw, dh);
-  } else {
-    x.fillStyle = '#9d9aa3'; x.beginPath(); x.arc(ax + aw / 2, ay + ah * 0.52, 120, 0, 7); x.fill();
-    x.beginPath(); x.ellipse(ax + aw / 2, ay + ah + 20, 250, 260, 0, Math.PI, Math.PI * 2); x.fill();
-    x.fillStyle = '#5d5a62'; x.font = '400 22px "Space Mono"'; x.textAlign = 'center'; x.fillText('PHOTO PENDING', ax + aw / 2, ay + ah * 0.28);
+  // foto: lengkung (classic/collage) atau dua panel (booth)
+  const booth = F.layout === 'booth';
+  const ax = booth ? sx + 36 : sx + 44, ay = booth ? sy + 36 : sy + 96, aw = sw - (booth ? 72 : 88), ah = sh - (booth ? 72 : 140), ry = ah * 0.34;
+  const archPath = (X, Y, W2, H2, R) => () => { x.beginPath(); x.moveTo(X, Y + H2 - 4); x.lineTo(X, Y + R); x.ellipse(X + W2 / 2, Y + R, W2 / 2, R, 0, Math.PI, Math.PI * 2); x.lineTo(X + W2, Y + H2 - 4); x.quadraticCurveTo(X + W2, Y + H2, X + W2 - 4, Y + H2); x.lineTo(X + 4, Y + H2); x.quadraticCurveTo(X, Y + H2, X, Y + H2 - 4); x.closePath(); };
+  const rectPath = (X, Y, W2, H2) => () => { x.beginPath(); x.rect(X, Y, W2, H2); };
+  const dots = (X, Y, W2, H2) => { x.fillStyle = 'rgba(23,21,28,.5)'; for (let j = 0; j < H2; j += 7) for (let i = (j / 7 % 2) * 3.5; i < W2; i += 7) { x.beginPath(); x.arc(X + i, Y + j, 1.7, 0, 7); x.fill(); } };
+  const photoIn = (path, X, Y, W2, H2, outline) => {
+    if (outline) { path(); x.lineWidth = 16; x.lineJoin = 'round'; x.strokeStyle = '#FFFFFF'; x.stroke(); }
+    path(); const g = x.createLinearGradient(X, Y, X + W2, Y + H2); g.addColorStop(0, '#e9e7df'); g.addColorStop(1, '#b8b5ad'); x.fillStyle = g; x.fill();
+    x.save(); path(); x.clip();
+    if (photo) {
+      const r = Math.max(W2 / photo.width, H2 / photo.height), dw = photo.width * r, dh = photo.height * r;
+      if (F.halftone && 'filter' in x) x.filter = 'grayscale(1) contrast(1.35)';
+      x.drawImage(photo, X + (W2 - dw) / 2, Y + (H2 - dh) * 0.3, dw, dh); x.filter = 'none';
+      if (F.halftone) dots(X, Y, W2, H2);
+    } else {
+      x.fillStyle = '#9d9aa3'; x.beginPath(); x.arc(X + W2 / 2, Y + H2 * 0.52, Math.min(W2, H2) * 0.17, 0, 7); x.fill();
+      x.beginPath(); x.ellipse(X + W2 / 2, Y + H2 + 20, W2 * 0.31, H2 * 0.34, 0, Math.PI, Math.PI * 2); x.fill();
+      x.fillStyle = '#5d5a62'; x.font = '400 ' + Math.round(Math.min(22, W2 / 30)) + 'px "Space Mono"'; x.textAlign = 'center'; x.fillText('PHOTO PENDING', X + W2 / 2, Y + H2 * 0.3);
+    }
+    x.restore(); path(); x.lineWidth = 3; x.lineJoin = 'miter'; x.strokeStyle = F.border; x.stroke();
+  };
+  if (booth) { const hh = ah / 2; photoIn(rectPath(ax, ay, aw, hh), ax, ay, aw, hh); photoIn(rectPath(ax, ay + hh, aw, hh), ax, ay + hh, aw, hh); }
+  else photoIn(archPath(ax, ay, aw, ah, ry), ax, ay, aw, ah, F.layout === 'collage');
+  if (DC) { x.save(); rr(sx, sy, sw, sh, F.radius); x.clip(); DC.draw(x, F, box, 'front'); x.restore(); }
+  if (F.layout === 'collage') {
+    x.save(); x.translate(sx + sw * 0.06, sy + sh * 0.5); x.rotate(-0.05);
+    x.font = '700 30px "DM Sans"'; x.textAlign = 'left'; const nm = (card.display_name || '').toUpperCase();
+    let fs = 30; while (fs > 14 && x.measureText(nm).width > sw * 0.62) { fs -= 2; x.font = '700 ' + fs + 'px "DM Sans"'; }
+    const tw = x.measureText(nm).width + 28; x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, tw, 52); x.lineWidth = 2; x.strokeStyle = F.border; x.strokeRect(0, 0, tw, 52);
+    x.fillStyle = '#17151C'; x.fillText(nm, 14, 36); x.restore();
   }
-  x.restore(); arch(); x.lineWidth = 3; x.strokeStyle = F.border; x.stroke();
-  x.textAlign = 'left'; x.fillStyle = F.border; x.font = '400 40px "Space Mono"'; x.fillText('◦ ◦ ◦', sx + 20, sy + 52);
-  x.textAlign = 'right'; x.font = '400 120px "DM Sans"'; x.fillStyle = F.border; x.fillText('✳', sx + sw - 8 + 3, sy + 92 + 4); x.fillStyle = F.star; x.fillText('✳', sx + sw - 8, sy + 92);
+  if (F.layout === 'classic') {
+    x.textAlign = 'left'; x.fillStyle = F.border; x.font = '400 40px "Space Mono"'; x.fillText('◦ ◦ ◦', sx + 20, sy + 52);
+    x.textAlign = 'right'; x.font = '400 120px "DM Sans"'; x.fillStyle = F.border; x.fillText('✳', sx + sw - 8 + 3, sy + 92 + 4); x.fillStyle = F.star; x.fillText('✳', sx + sw - 8, sy + 92);
+  }
   x.textAlign = 'left';
   // teks
   let y = sy + sh + 66; x.fillStyle = F.text_color;

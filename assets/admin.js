@@ -238,7 +238,7 @@ async function postcards(box, alive) {
 }
 
 /* ---------- FRAME STUDIO ---------- */
-const COLOR_FIELDS = [['bg', 'Frame background'], ['border', 'Frame border'], ['accent', 'Accent'], ['text_color', 'Primary text'], ['star', 'Star / sticker'], ['shadow', 'Shadow']];
+const COLOR_FIELDS = [['bg', 'Frame background'], ['border', 'Frame border'], ['accent', 'Accent'], ['text_color', 'Primary text'], ['star', 'Star / sticker'], ['shadow', 'Shadow'], ['deco1', 'Sticker color A'], ['deco2', 'Sticker color B']];
 const lum = hex => { const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
 const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
 
@@ -250,7 +250,7 @@ async function studio(box, alive) {
   const usage = id => cards.filter(c => c.frame_id === id).length;
   const dirty = () => saved && draft && JSON.stringify(saved) !== JSON.stringify(draft);
   const valid = () => draft && COLOR_FIELDS.every(([k]) => /^#[0-9a-fA-F]{6}$/.test(draft[k])) && draft.name.trim().length >= 1 && draft.name.trim().length <= 40;
-  const pick = f => { curId = f.id; saved = { id: f.id, name: f.name, bg: f.bg, border: f.border, accent: f.accent, text_color: f.text_color, star: f.star, shadow: f.shadow, radius: f.radius, pattern: f.pattern, is_active: f.is_active }; draft = { ...saved }; sampleId = (cards.find(c => c.frame_id === f.id) || cards[0] || {}).id; };
+  const pick = f => { curId = f.id; saved = { id: f.id, name: f.name, bg: f.bg, border: f.border, accent: f.accent, text_color: f.text_color, star: f.star, shadow: f.shadow, radius: f.radius, pattern: f.pattern, layout: f.layout || 'classic', decor: f.decor || 'none', big_shape: f.big_shape || 'none', halftone: !!f.halftone, deco1: f.deco1 || '#FA78CF', deco2: f.deco2 || '#84AEF8', is_active: f.is_active }; draft = { ...saved }; sampleId = (cards.find(c => c.frame_id === f.id) || cards[0] || {}).id; };
   if (frames[0]) pick(frames[0]);
 
   function drawList() {
@@ -290,6 +290,9 @@ async function studio(box, alive) {
     const rad = h('input', { type: 'range', min: 0, max: 32, value: draft.radius, attrs: { 'aria-label': 'Corner radius' }, on: { input: () => { draft.radius = +rad.value; radOut.textContent = rad.value + 'px'; sync(); } } });
     const radOut = h('span', { class: 'hint', text: draft.radius + 'px' });
     const pat = h('select', { on: { change: () => { draft.pattern = pat.value; sync(); } } }, PATTERNS.map(p => h('option', { value: p, text: p.toUpperCase(), selected: p === draft.pattern })));
+    const opt = (key, list, label) => h('label', { class: 'field' }, h('span', { text: label }),
+      h('select', { on: { change: e => { draft[key] = e.target.value; sync(); } } }, list.map(v => h('option', { value: v, text: v.toUpperCase(), selected: v === draft[key] }))));
+    const ht = h('input', { type: 'checkbox', checked: !!draft.halftone, on: { change: () => { draft.halftone = ht.checked; sync(); } } });
     const act = h('input', { type: 'checkbox', checked: !!draft.is_active, on: { change: () => { draft.is_active = act.checked; sync(); } } });
     saveBtn.addEventListener('click', () => busy(saveBtn, 'SAVING…', async () => {
       if (!valid()) return;
@@ -302,7 +305,7 @@ async function studio(box, alive) {
     dupBtn.addEventListener('click', () => busy(dupBtn, 'DUPLICATING…', async () => {
       const src = frames.find(x => x.id === curId); const base = (slugify(src.id) || 'frame').replace(/-copy(-\d+)?$/, '').slice(0, 50);
       let id = base + '-copy', n = 2; while (frames.some(x => x.id === id)) id = base + '-copy-' + n++;
-      const row = { id, name: (src.name + ' Copy').slice(0, 40), bg: src.bg, border: src.border, accent: src.accent, text_color: src.text_color, star: src.star, shadow: src.shadow, radius: src.radius, pattern: src.pattern, sort_order: Math.max(0, ...frames.map(x => x.sort_order)) + 1, is_active: true };
+      const row = { id, name: (src.name + ' Copy').slice(0, 40), bg: src.bg, border: src.border, accent: src.accent, text_color: src.text_color, star: src.star, shadow: src.shadow, radius: src.radius, pattern: src.pattern, layout: src.layout, decor: src.decor, big_shape: src.big_shape, halftone: src.halftone, deco1: src.deco1, deco2: src.deco2, sort_order: Math.max(0, ...frames.map(x => x.sort_order)) + 1, is_active: true };
       const r = await sb.from('ef_frames').insert(row); if (r.error) { err.textContent = errMsg(r.error); return; }
       toast('Frame duplicated as “' + row.name + '”.'); frames = await fetchFrames(); pick(frames.find(x => x.id === id)); drawAll(); await syncSite();
     }));
@@ -310,6 +313,10 @@ async function studio(box, alive) {
     form.append(h('span', { class: 'tiny-heading', text: 'EDITING FRAME · ' + saved.id }),
       h('label', { class: 'field', style: 'margin-top:12px' }, h('span', { text: 'FRAME NAME' }), nameIn), ...rows,
       h('div', { class: 'form-grid' }, h('label', { class: 'field' }, h('span', { text: 'CORNER RADIUS' }), rad, radOut), h('label', { class: 'field' }, h('span', { text: 'BACKGROUND PATTERN' }), pat)),
+      h('span', { class: 'tiny-heading', text: 'Y2K DECOR', style: 'display:block;margin:14px 0 6px' }),
+      h('div', { class: 'form-grid' }, opt('layout', E.LAYOUTS, 'LAYOUT (CLASSIC / COLLAGE / BOOTH)'), opt('decor', E.DECORS, 'STICKER PACK')),
+      h('div', { class: 'form-grid' }, opt('big_shape', E.BIGS, 'BIG SHAPE BEHIND PHOTO')),
+      h('label', { class: 'switch-row', style: 'padding:6px 0' }, ht, h('span', {}, h('b', { text: 'Halftone photo', style: 'font-size:14px' }), h('small', { text: 'Black-and-white dotted print look on the photo (also in the downloaded image).' }))),
       h('label', { class: 'switch-row', style: 'padding:6px 0' }, act, h('span', {}, h('b', { text: 'Active', style: 'font-size:14px' }), h('small', { text: 'Inactive frames are hidden from the public frame collection; postcards already using them keep their look.' }))),
       notes, err, h('div', { class: 'row-actions' }, saveBtn, resetBtn, dupBtn),
       h('label', { class: 'field', style: 'margin-top:18px' }, h('span', { text: 'PREVIEW ON' }), sample));
