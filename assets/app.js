@@ -285,6 +285,16 @@ function cardUrl(card) {
   return base + '#card/' + card.slug;
 }
 const _qrCache = {};
+let _qrLoading = null;
+function ensureQr() { // muat qr.js sendiri bila index.html lama (cache) belum memuatnya
+  if (window.qrcode) return Promise.resolve(true);
+  if (!_qrLoading) _qrLoading = new Promise(res => {
+    const sc = document.createElement('script'); sc.src = 'assets/qr.js?v=3';
+    sc.onload = () => res(!!window.qrcode); sc.onerror = () => res(false); document.head.appendChild(sc);
+  });
+  return _qrLoading;
+}
+if (!window.qrcode) ensureQr().then(ok => { if (ok && window.EFS && EFS.renderAll) { try { EFS.renderAll(); } catch (e) { /* noop */ } } });
 function qrFor(url) {
   if (!_qrCache[url]) { const q = window.qrcode(0, 'M'); q.addData(url); q.make(); _qrCache[url] = q; }
   return _qrCache[url];
@@ -714,23 +724,25 @@ async function renderPostcardCanvas(card, frame) {
     x.fillRect(50, y - 22, 78, 28); x.fillStyle = '#fff'; x.font = '400 17px "Space Mono"'; x.fillText('MOOD', 62, y - 2);
     x.fillStyle = F.text_color; x.font = 'italic 400 34px Fraunces'; wrapLines(x, card.mood_quote, 540).slice(0, 2).forEach((ln, i) => x.fillText(ln, 148, y + i * 42));
   }
+  let qrFailed = false;
   try {
+    if (!(await ensureQr())) throw new Error('qr');
     const QS = 160, qx = W - 50 - QS, qy = sy + sh + 40;
     drawQr(x, cardUrl(card), qx, qy, QS);
     x.fillStyle = F.text_color; x.font = '400 16px "Space Mono"'; x.textAlign = 'center'; x.fillText('SCAN ME', qx + QS / 2, qy + QS + 26);
-  } catch (e) { /* QR gagal: kartu tetap diunduh */ }
+  } catch (e) { qrFailed = true; }
   x.fillStyle = '#77737a'; x.font = '400 17px "Space Mono"'; x.textAlign = 'center'; x.fillText('ETHICS FRAME STUDIO · KELOMPOK 6 · ETIKA ADMINISTRASI DAN KEPEGAWAIAN', W / 2, H - 28);
-  return { canvas: c, photoFailed };
+  return { canvas: c, photoFailed, qrFailed };
 }
 async function downloadPostcard(card, frame, feedbackEl) {
   const say = (t, e) => { if (feedbackEl) feedbackEl.textContent = t; toast(t, e); };
   try {
     say('Preparing image…');
-    const { canvas, photoFailed } = await renderPostcardCanvas(card, frame);
+    const { canvas, photoFailed, qrFailed } = await renderPostcardCanvas(card, frame);
     const blob = await new Promise((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
     const a = h('a', { href: URL.createObjectURL(blob), download: 'postcard-' + (SLUG.test(card.slug) ? card.slug : 'card') + '.png' });
     document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    say(photoFailed ? 'Image saved, but the photo could not be embedded (blocked or unavailable).' : 'Image saved.', photoFailed);
+    say(qrFailed ? 'Image saved, but the QR code could not be drawn. Refresh the page (Ctrl+Shift+R) and try again.' : photoFailed ? 'Image saved, but the photo could not be embedded (blocked or unavailable).' : 'Image saved.', qrFailed || photoFailed);
   } catch (e) { say('Could not create the image on this browser/connection.', true); }
 }
 EFS.renderPostcardCanvas = renderPostcardCanvas;

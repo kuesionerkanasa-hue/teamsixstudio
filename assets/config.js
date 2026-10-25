@@ -9,10 +9,10 @@ window.EFS_CONFIG = {
   // Jika kosong, modal meminta email + password.
   ADMIN_EMAIL: "",
 
-  // Sesi admin otomatis keluar setelah sekian menit tanpa aktivitas di panel.
   // Alamat situs yang dipakai di QR code & tombol Share. Isi dengan alamat GitHub Pages kamu
   // (mis. "https://kuesionerkanasa-hue.github.io/teamsixstudio/"). Jika kosong, memakai alamat halaman saat ini.
-  SITE_URL: "",
+  SITE_URL: "https://kuesionerkanasa-hue.github.io/teamsixstudio/",
 
+  // Sesi admin otomatis keluar setelah sekian menit tanpa aktivitas di panel.
   ADMIN_IDLE_MINUTES: 30
 };
