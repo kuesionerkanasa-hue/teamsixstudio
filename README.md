@@ -11,6 +11,7 @@ assets/app.js         galeri, vote, komentar, spotlight, login anggota, ekspor P
 assets/admin.js       panel admin (overview, postcards, Frame Studio, komentar, settings, activity)
 sql/01_schema.sql     skema + RLS + fungsi + storage (non-destruktif, semua objek berawalan ef_)
 sql/02_admin_setup.sql  menjadikan satu akun sebagai admin
+sql/04_frame_custom_layout.sql  kolom `custom` (posisi stiker hasil drag di Frame Studio); jalankan setelah 03
 sql/03_y2k_frames.sql   kolom & 6 preset frame Y2K (collage/photobooth/stiker/halftone); jalankan setelah 01, aman diulang
 assets/decor.js         bentuk stiker (bintang, hati, kancing, pita, kupu-kupu) — dipakai tampilan web & PNG
 tests/                uji RLS di Postgres lokal (stub Supabase)
@@ -48,7 +49,7 @@ Seed hanya berisi 8 anggota dari desain Canva (nama, username, mood, preset fram
 - Mengganti foto tidak menghapus file lama.
 
 ## Frame Studio
-Frame Y2K punya opsi tambahan di Frame Studio: **Layout** (classic / collage = foto berlengkung + bintang besar + label nama; booth = dua panel foto ala photobooth), **Sticker pack** (stars/hearts/buttons/bows/mix), **Big shape** (star/heart/burst di belakang foto), **Halftone photo** (efek cetak titik hitam-putih), warna stiker A/B, dan pola latar baru (gingham, checker). Semuanya ikut tergambar di PNG unduhan. Jalankan `sql/03_y2k_frames.sql` sekali agar kolomnya ada.
+Frame Y2K punya opsi tambahan di Frame Studio: **Layout** (classic / collage = foto berlengkung + bintang besar + label nama; booth = dua panel foto ala photobooth), **Sticker pack** (stars/hearts/buttons/bows/mix), **Big shape** (star/heart/burst di belakang foto), **Halftone photo** (efek cetak titik hitam-putih), warna stiker A/B, dan pola latar baru (gingham, checker). Semuanya ikut tergambar di PNG unduhan. Tombol **✥ Edit layout** di preview memungkinkan menggeser stiker/bentuk besar/label nama dengan drag (atau tombol panah), mengatur ukuran & rotasi, menyembunyikan, atau mengembalikan ke posisi awal; posisi disimpan per frame di kolom `custom` (jalankan `sql/04_frame_custom_layout.sql`). Jalankan `sql/03_y2k_frames.sql` sekali agar kolomnya ada.
 
 Perubahan frame bersifat **draft** sampai tombol *Save Changes*. Frame adalah preset **global**: menyimpannya mengubah semua postcard yang memakainya. Untuk menata satu postcard saja: *Duplicate Frame* → ubah warna → pasang salinan itu di Postcards → Edit.
 Arti kolom: *background/border/star* menggambar bingkai; *accent* = chip MOOD & garis; *primary text* = nama/quote (ada peringatan kontras); *shadow* = bayangan kartu terpilih.

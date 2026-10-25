@@ -164,6 +164,24 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   ok('studio: PATCH hanya berisi kolom yang berubah', patchBody && JSON.stringify(Object.keys(JSON.parse(patchBody))) === '["border"]', patchBody);
   await page.click('button:has-text("DUPLICATE FRAME")'); await page.waitForTimeout(500);
   ok('studio: duplicate mengirim INSERT frame baru', log.some(l => l.startsWith('POST /rest/v1/ef_frames')));
+  // ---- drag stiker (mode edit layout) ----
+  await page.click('button:has-text("EDIT LAYOUT")'); await page.waitForTimeout(300);
+  const st0 = page.locator('.preview-stage .decor-front .sticker').first();
+  ok('edit layout: stiker bisa dipegang (editable)', (await st0.getAttribute('class')).includes('editable'));
+  const posBefore = await st0.evaluate(el => el.style.left + '|' + el.style.top);
+  await st0.scrollIntoViewIfNeeded(); const bb = await st0.boundingBox();
+  await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await page.mouse.down();
+  await page.mouse.move(bb.x + bb.width / 2 + 40, bb.y + bb.height / 2 + 25, { steps: 5 }); await page.mouse.up(); await page.waitForTimeout(300);
+  const posAfter = await page.locator('.preview-stage .decor-front .sticker').first().evaluate(el => el.style.left + '|' + el.style.top);
+  ok('edit layout: drag memindahkan stiker', posBefore !== posAfter, posBefore + ' -> ' + posAfter);
+  ok('edit layout: Save aktif setelah drag (draft)', await page.locator('button:has-text("SAVE CHANGES")').isEnabled());
+  await page.locator('.edit-panel input[aria-label="Size"]').fill('30'); await page.waitForTimeout(200);
+  await page.locator('.preview-stage .decor-front .sticker').first().focus(); await page.keyboard.press('ArrowRight'); await page.waitForTimeout(200);
+  patchBody = null; await page.click('button:has-text("SAVE CHANGES")'); await page.waitForTimeout(800);
+  let pj = null; try { pj = JSON.parse(patchBody); } catch (e) { /* noop */ }
+  ok('edit layout: PATCH membawa custom posisi stiker', pj && pj.custom && pj.custom.s0 && typeof pj.custom.s0.x === 'number' && pj.custom.s0.size === 30, patchBody);
+  await page.screenshot({ path: OUT + '/admin-edit.png' });
+  await page.click('button:has-text("DONE")'); await page.waitForTimeout(200);
   await page.click('button:has-text("LOG OUT")'); await page.waitForTimeout(500);
   ok('logout admin menutup panel', (await page.locator('.admin').count()) === 0);
 

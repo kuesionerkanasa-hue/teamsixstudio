@@ -195,6 +195,9 @@ select t.expect_err('validasi: big_shape liar ditolak', $q$update public.ef_fram
 select t.expect_err('validasi: deco1 bukan hex ditolak', $q$update public.ef_frames set deco1='red' where id='photobooth'$q$, array['23514']);
 select t.expect_err('validasi: deco2 bukan hex ditolak', $q$update public.ef_frames set deco2='url(x)' where id='photobooth'$q$, array['23514']);
 select t.expect_err('validasi: pola liar ditolak', $q$update public.ef_frames set pattern='zigzag' where id='photobooth'$q$, array['23514']);
+select t.expect_rows('admin: simpan posisi stiker (custom)', $q$update public.ef_frames set custom='{"s0":{"x":10,"y":20,"size":15,"rot":-5},"t":{"x":8,"y":40}}'::jsonb where id='photobooth'$q$, 1);
+select t.expect_err('validasi: custom bukan object ditolak', $q$update public.ef_frames set custom='[1,2]'::jsonb where id='photobooth'$q$, array['23514']);
+select t.expect_err('validasi: custom terlalu besar ditolak', $q$update public.ef_frames set custom=jsonb_build_object('a', repeat('x', 5000)) where id='photobooth'$q$, array['23514']);
 select t.expect_err('validasi: pattern tak dikenal', $q$update public.ef_frames set pattern='x' where id='bubble-pop'$q$, array['23514']);
 select t.expect_err('validasi: photo_url javascript: ditolak', $q$update public.ef_profiles set photo_url='javascript:alert(1)' where slug='arjunna'$q$, array['23514']);
 select t.expect_rows('admin: set photo_url https', $q$update public.ef_profiles set photo_url='https://example.com/a.jpg' where slug='arjunna'$q$, 1);
@@ -203,7 +206,7 @@ select t.expect_err('integritas: frame yang dipakai tak bisa dihapus', $q$delete
 select t.expect_rows('admin: duplikat frame', $q$insert into public.ef_frames(id,name,bg) select 'bubble-pop-copy','Bubble Pop Copy',bg from public.ef_frames where id='bubble-pop'$q$, 1);
 select t.expect_rows('admin: ubah sort_order profil', $q$update public.ef_profiles set sort_order=sort_order where slug='arjunna'$q$, 1);
 select t.expect_val('audit: update non-status profil tidak dicatat', $q$select count(*) from public.ef_audit where action='profiles.update'$q$, '0');
-select t.expect_rows('admin: baca audit', $q$select * from public.ef_audit$q$, 3);
+select t.expect_rows('admin: baca audit', $q$select * from public.ef_audit$q$, 4);
 select t.expect_rows('storage: admin boleh upload foto', $q$insert into storage.objects(bucket_id,name) values ('ef-photos','a.png')$q$, 1);
 select t.back();
 select t.login((select id from t.u where name='m1'));

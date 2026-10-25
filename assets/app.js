@@ -44,7 +44,8 @@ function normFrame(f) {
     pattern: PATTERNS.includes(f.pattern) ? f.pattern : 'none',
     layout: LAYOUTS.includes(f.layout) ? f.layout : 'classic', decor: DECORS.includes(f.decor) ? f.decor : 'none',
     big_shape: BIGS.includes(f.big_shape) ? f.big_shape : 'none', halftone: f.halftone === true,
-    deco1: safeHex(f.deco1, DEF_FRAME.deco1), deco2: safeHex(f.deco2, DEF_FRAME.deco2)
+    deco1: safeHex(f.deco1, DEF_FRAME.deco1), deco2: safeHex(f.deco2, DEF_FRAME.deco2),
+    custom: window.EFS_DECOR ? window.EFS_DECOR.clean(f.custom) : {}
   };
 }
 function applyFrame(el, frame) {
@@ -356,14 +357,14 @@ function voteButton(card, extraClass) {
 }
 function postcard(card, opts = {}) {
   const frame = opts.frame || frameOf(card.frame_id);
-  const el = h('article', { class: 'profile-card' + (opts.selectable ? ' is-selectable' : '') + (opts.selected ? ' is-selected' : ''), dataset: { slug: card.slug } });
+  const el = h('article', { class: 'profile-card' + (opts.edit ? ' is-editing' : '') + (opts.selectable ? ' is-selectable' : '') + (opts.selected ? ' is-selected' : ''), dataset: { slug: card.slug } });
   applyFrame(el, frame);
   const F = normFrame(frame), D = window.EFS_DECOR;
   const shell = h('div', { class: 'portrait-shell', dataset: { pattern: F.pattern, layout: F.layout, halftone: F.halftone ? '1' : '0' } },
-    D ? D.layer(F, 'back') : null,
+    D ? D.layer(F, 'back', opts.edit) : null,
     F.layout === 'booth' ? h('div', { class: 'booth' }, photoNode(card), photoNode(card)) : photoNode(card),
-    F.layout === 'collage' ? h('div', { class: 'paper-tag', text: (card.display_name || '').toUpperCase() }) : null,
-    D ? D.layer(F, 'front') : null,
+    F.layout === 'collage' ? (() => { const tp = D ? D.tagPos(F) : { x: 6, y: 50 }; const t = h('div', { class: 'paper-tag' + (opts.edit ? ' editable' : ''), text: (card.display_name || '').toUpperCase(), dataset: { id: 't' } }); t.style.left = tp.x + '%'; t.style.top = tp.y + '%'; if (opts.edit) { t.tabIndex = 0; t.setAttribute('role', 'button'); t.setAttribute('aria-label', 'Name label — drag or use arrow keys'); } return t; })() : null,
+    D ? D.layer(F, 'front', opts.edit) : null,
     h('div', { class: 'portrait-bottom' },
       h('div', { class: 'badges' }, badgesFor(card).map(([t, c]) => h('span', { class: 'tag ' + c, text: t }))),
       opts.detail ? null : voteButton(card)));
@@ -737,7 +738,8 @@ async function renderPostcardCanvas(card, frame) {
   else photoIn(archPath(ax, ay, aw, ah, ry), ax, ay, aw, ah, F.layout === 'collage');
   if (DC) { x.save(); rr(sx, sy, sw, sh, F.radius); x.clip(); DC.draw(x, F, box, 'front'); x.restore(); }
   if (F.layout === 'collage') {
-    x.save(); x.translate(sx + sw * 0.06, sy + sh * 0.5); x.rotate(-0.05);
+    const tp = DC ? DC.tagPos(F) : { x: 6, y: 50 };
+    x.save(); x.translate(sx + sw * tp.x / 100, sy + sh * tp.y / 100); x.rotate(-0.05);
     x.font = '700 30px "DM Sans"'; x.textAlign = 'left'; const nm = (card.display_name || '').toUpperCase();
     let fs = 30; while (fs > 14 && x.measureText(nm).width > sw * 0.62) { fs -= 2; x.font = '700 ' + fs + 'px "DM Sans"'; }
     const tw = x.measureText(nm).width + 28; x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, tw, 52); x.lineWidth = 2; x.strokeStyle = F.border; x.strokeRect(0, 0, tw, 52);

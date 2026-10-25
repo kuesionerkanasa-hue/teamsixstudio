@@ -368,3 +368,16 @@ table.data .thumb{width:40px;height:46px;padding:3px}
 .paper-tag{position:absolute;left:6%;top:50%;z-index:3;background:#fff;color:#17151C;border:1px solid var(--bd);padding:5px 9px;font:700 12px var(--f-sans);letter-spacing:.04em;transform:rotate(-3deg);max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .portrait-shell[data-halftone="1"] .arch img{filter:grayscale(1) contrast(1.35)}
 .portrait-shell[data-halftone="1"] .arch:has(img):after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(rgba(23,21,28,.5) 1.1px,transparent 1.4px) 0 0/4px 4px}
+
+/* mode edit (drag stiker) di Frame Studio */
+.is-editing .portrait-shell{touch-action:none}
+.is-editing .decor-back{z-index:2}
+.is-editing .decor-back .sticker{opacity:.55}
+.is-editing .decor .editable,.is-editing .paper-tag.editable{pointer-events:auto;cursor:grab;touch-action:none}
+.is-editing .decor .editable:active,.is-editing .paper-tag.editable:active{cursor:grabbing}
+.is-editing .sticker.is-off{opacity:.22}
+.is-editing .editable.sel{outline:2px dashed var(--ink,#17151C);outline-offset:3px}
+.is-editing .editable:focus-visible{outline:2px solid #17151C;outline-offset:3px}
+.edit-panel{margin-top:14px;border:1px solid var(--ink,#17151C);background:#FAF9F5;padding:12px 14px;display:grid;gap:10px}
+.edit-panel .row-actions{margin-top:0}
+.edit-panel label.field{margin:0}

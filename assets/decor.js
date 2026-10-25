@@ -46,30 +46,67 @@
   const DECORS = Object.keys(PACKS);
   const BIGS = ['none', 'star', 'heart', 'burst'];
 
-  function items(F, which) {
-    if (which === 'back') {
-      const s = BIG[F.big_shape]; if (!s) return [];
-      return [{ shape: s, x: BIG_BOX[0], y: BIG_BOX[1], size: BIG_BOX[2], rot: BIG_BOX[3], col: F.deco1, big: true }];
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const num = (v, a, b) => (typeof v === 'number' && isFinite(v)) ? clamp(v, a, b) : undefined;
+  const KEYS = /^(s[0-4]|b|t)$/;
+  // Bersihkan data posisi dari database/admin: hanya kunci & angka yang valid.
+  function clean(c) {
+    const out = {};
+    if (!c || typeof c !== 'object' || Array.isArray(c)) return out;
+    for (const k of Object.keys(c)) {
+      if (!KEYS.test(k) || !c[k] || typeof c[k] !== 'object') continue;
+      const o = c[k], r = {};
+      const x = num(o.x, -30, 110), y = num(o.y, -30, 110);
+      if (x !== undefined) r.x = Math.round(x * 10) / 10;
+      if (y !== undefined) r.y = Math.round(y * 10) / 10;
+      if (k !== 't') {
+        const sz = num(o.size, 4, 140), rt = num(o.rot, -180, 180);
+        if (sz !== undefined) r.size = Math.round(sz * 10) / 10;
+        if (rt !== undefined) r.rot = Math.round(rt);
+        if (o.off === true) r.off = true;
+      }
+      out[k] = r;
     }
-    const slots = SLOTS[F.layout] || SLOTS.classic, pack = PACKS[F.decor] || [];
-    return pack.slice(0, slots.length).map(([shape, c], i) => ({ shape, x: slots[i][0], y: slots[i][1], size: slots[i][2], rot: slots[i][3], col: c === 1 ? F.deco1 : F.deco2 }));
+    return out;
+  }
+  function apply(base, F) { const o = (F.custom || {})[base.id]; return o ? Object.assign({}, base, o) : base; }
+
+  // withHidden: untuk mode edit admin (stiker yang disembunyikan tetap ditampilkan pudar)
+  function items(F, which, withHidden) {
+    let list;
+    if (which === 'back') {
+      const s = BIG[F.big_shape]; list = s ? [{ id: 'b', shape: s, x: BIG_BOX[0], y: BIG_BOX[1], size: BIG_BOX[2], rot: BIG_BOX[3], col: F.deco1, big: true }] : [];
+    } else {
+      const slots = SLOTS[F.layout] || SLOTS.classic, pack = PACKS[F.decor] || [];
+      list = pack.slice(0, slots.length).map(([shape, c], i) => ({ id: 's' + i, shape, x: slots[i][0], y: slots[i][1], size: slots[i][2], rot: slots[i][3], col: c === 1 ? F.deco1 : F.deco2 }));
+    }
+    list = list.map(it => apply(it, F));
+    return withHidden ? list : list.filter(it => !it.off);
+  }
+  const tagPos = F => { const o = (F.custom || {}).t || {}; return { x: o.x !== undefined ? o.x : 6, y: o.y !== undefined ? o.y : 50 }; };
+  // semua elemen yang bisa digeser (dipakai editor admin)
+  function all(F) {
+    const l = items(F, 'back', true).concat(items(F, 'front', true));
+    if (F.layout === 'collage') l.push(Object.assign({ id: 't', tag: true }, tagPos(F)));
+    return l;
   }
 
   const NS = 'http://www.w3.org/2000/svg';
-  function layer(F, which) {
-    const list = items(F, which); if (!list.length) return null;
+  function layer(F, which, edit) {
+    const list = items(F, which, !!edit); if (!list.length) return null;
     const box = document.createElement('div');
     box.className = 'decor decor-' + which; box.setAttribute('aria-hidden', 'true');
     for (const it of list) {
       const sh = SHAPES[it.shape]; if (!sh) continue;
       const svg = document.createElementNS(NS, 'svg');
-      svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('class', 'sticker');
+      svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('class', 'sticker' + (it.off ? ' is-off' : '')); svg.dataset.id = it.id;
       svg.style.left = it.x + '%'; svg.style.top = it.y + '%'; svg.style.width = it.size + '%';
       svg.style.transform = 'rotate(' + it.rot + 'deg)';
       const p = document.createElementNS(NS, 'path');
       p.setAttribute('d', sh.d); p.setAttribute('fill', it.col); p.setAttribute('stroke', F.border);
       p.setAttribute('stroke-width', it.big ? '1.1' : '3'); p.setAttribute('stroke-linejoin', 'round');
       if (sh.eo) p.setAttribute('fill-rule', 'evenodd');
+      if (edit) { svg.setAttribute('tabindex', '0'); svg.setAttribute('role', 'button'); svg.setAttribute('aria-label', (it.big ? 'Big shape' : 'Sticker ' + it.shape) + ' — drag or use arrow keys'); svg.classList.add('editable'); }
       svg.appendChild(p); box.appendChild(svg);
     }
     return box;
@@ -90,5 +127,5 @@
     }
   }
 
-  window.EFS_DECOR = { SHAPES, LAYOUTS, DECORS, BIGS, layer, draw };
+  window.EFS_DECOR = { SHAPES, LAYOUTS, DECORS, BIGS, layer, draw, clean, items, all, tagPos };
 })();

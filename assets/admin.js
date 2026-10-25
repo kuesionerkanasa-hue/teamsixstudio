@@ -246,11 +246,13 @@ async function studio(box, alive) {
   let frames = await fetchFrames(), cards = await fetchCards();
   if (!alive()) return;
   let curId = (frames[0] || {}).id, draft = null, saved = null, sampleId = null;
+  let editMode = false, selId = null, refocus = null, syncFn = () => {};
+  const D = window.EFS_DECOR, editPanel = h('div', { class: 'edit-panel' });
   const listEl = h('div', { class: 'frame-list' }), form = h('div'), stage = h('div', { class: 'preview-stage' }), notes = h('div');
   const usage = id => cards.filter(c => c.frame_id === id).length;
   const dirty = () => saved && draft && JSON.stringify(saved) !== JSON.stringify(draft);
   const valid = () => draft && COLOR_FIELDS.every(([k]) => /^#[0-9a-fA-F]{6}$/.test(draft[k])) && draft.name.trim().length >= 1 && draft.name.trim().length <= 40;
-  const pick = f => { curId = f.id; saved = { id: f.id, name: f.name, bg: f.bg, border: f.border, accent: f.accent, text_color: f.text_color, star: f.star, shadow: f.shadow, radius: f.radius, pattern: f.pattern, layout: f.layout || 'classic', decor: f.decor || 'none', big_shape: f.big_shape || 'none', halftone: !!f.halftone, deco1: f.deco1 || '#FA78CF', deco2: f.deco2 || '#84AEF8', is_active: f.is_active }; draft = { ...saved }; sampleId = (cards.find(c => c.frame_id === f.id) || cards[0] || {}).id; };
+  const pick = f => { selId = null; curId = f.id; saved = { id: f.id, name: f.name, bg: f.bg, border: f.border, accent: f.accent, text_color: f.text_color, star: f.star, shadow: f.shadow, radius: f.radius, pattern: f.pattern, layout: f.layout || 'classic', decor: f.decor || 'none', big_shape: f.big_shape || 'none', halftone: !!f.halftone, deco1: f.deco1 || '#FA78CF', deco2: f.deco2 || '#84AEF8', custom: JSON.parse(JSON.stringify(f.custom || {})), is_active: f.is_active }; draft = JSON.parse(JSON.stringify(saved)); sampleId = (cards.find(c => c.frame_id === f.id) || cards[0] || {}).id; };
   if (frames[0]) pick(frames[0]);
 
   function drawList() {
@@ -264,7 +266,72 @@ async function studio(box, alive) {
     stage.replaceChildren();
     const sample = cards.find(c => c.id === sampleId); if (!sample) { stage.append(h('div', { class: 'empty', text: 'Add a postcard to preview frames.' })); return; }
     const pv = normFrame({ ...draft, id: curId });
-    stage.append(E.postcard(sample, { frame: pv, selected: true, meta: false }));
+    const cardEl = E.postcard(sample, { frame: pv, selected: true, meta: false, edit: editMode });
+    stage.append(cardEl);
+    if (editMode) bindEdit(cardEl, pv);
+  }
+  const cl = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const curItem = id => { const pv = normFrame({ ...draft, id: curId }); return D.all(pv).find(i => i.id === id); };
+  function setItem(id, patch) {
+    const it = curItem(id); if (!it) return;
+    draft.custom = draft.custom || {};
+    const base = id === 't' ? { x: it.x, y: it.y } : { x: it.x, y: it.y, size: it.size, rot: it.rot, off: !!it.off };
+    const next = { ...base, ...(draft.custom[id] || {}), ...patch };
+    if (!next.off) delete next.off;
+    draft.custom[id] = next;
+  }
+  function select(id) { selId = id; stage.querySelectorAll('.editable').forEach(el => el.classList.toggle('sel', el.dataset.id === id)); drawEditPanel(); }
+  function bindEdit(cardEl) {
+    const shell = cardEl.querySelector('.portrait-shell'); if (!shell) return;
+    shell.querySelectorAll('.editable').forEach(el => {
+      const id = el.dataset.id; el.classList.toggle('sel', id === selId);
+      if (refocus === id) { el.focus({ preventScroll: true }); }
+      el.addEventListener('pointerdown', e => {
+        e.preventDefault(); select(id);
+        const r = shell.getBoundingClientRect(), it = curItem(id); if (!it || !r.width) return;
+        const sx = e.clientX, sy = e.clientY; let pend = null;
+        try { el.setPointerCapture(e.pointerId); } catch (_) { /* noop */ }
+        const mv = ev => { const x = cl(it.x + (ev.clientX - sx) / r.width * 100, -25, 105), y = cl(it.y + (ev.clientY - sy) / r.height * 100, -25, 105); el.style.left = x + '%'; el.style.top = y + '%'; pend = { x, y }; };
+        const up = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); if (pend) { setItem(id, pend); refocus = id; syncFn(); refocus = null; } };
+        el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+      });
+      el.addEventListener('focus', () => { if (selId !== id) select(id); });
+      el.addEventListener('keydown', e => {
+        const k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key]; if (!k) return;
+        e.preventDefault(); const it = curItem(id), st = e.shiftKey ? 5 : 1;
+        setItem(id, { x: cl(it.x + k[0] * st, -25, 105), y: cl(it.y + k[1] * st, -25, 105) }); refocus = id; syncFn(); refocus = null;
+      });
+    });
+  }
+  function drawEditPanel() {
+    editPanel.replaceChildren();
+    if (!D) return;
+    if (!editMode) {
+      editPanel.append(h('button', { class: 'box-button', type: 'button', text: '✥ EDIT LAYOUT — DRAG STICKERS', on: { click: () => { editMode = true; drawPreview(); drawEditPanel(); } } }),
+        h('p', { class: 'hint', text: 'Move, resize, rotate or hide the stickers, the big shape and the name label right on the preview.' }));
+      return;
+    }
+    const it = selId ? curItem(selId) : null;
+    editPanel.append(h('p', { class: 'hint', text: 'Drag any sticker to move it (arrow keys nudge the focused one; Shift = bigger steps). Changes are a draft until Save Changes.' }));
+    if (!it) editPanel.append(h('p', { class: 'hint', text: 'Click a sticker to adjust its size and rotation.' }));
+    else {
+      const label = it.tag ? 'Name label' : it.id === 'b' ? 'Big shape' : 'Sticker · ' + it.shape;
+      editPanel.append(h('span', { class: 'tiny-heading', text: 'SELECTED · ' + label.toUpperCase() }));
+      if (!it.tag) {
+        const sz = h('input', { type: 'range', min: 4, max: 140, value: Math.round(it.size), attrs: { 'aria-label': 'Size' } });
+        const rt = h('input', { type: 'range', min: -180, max: 180, value: Math.round(it.rot), attrs: { 'aria-label': 'Rotation' } });
+        sz.addEventListener('input', () => { setItem(selId, { size: +sz.value }); syncFn(); });
+        rt.addEventListener('input', () => { setItem(selId, { rot: +rt.value }); syncFn(); });
+        const off = h('input', { type: 'checkbox', checked: !!it.off });
+        off.addEventListener('change', () => { setItem(selId, { off: off.checked }); syncFn(); });
+        editPanel.append(h('div', { class: 'form-grid' }, h('label', { class: 'field' }, h('span', { text: 'SIZE' }), sz), h('label', { class: 'field' }, h('span', { text: 'ROTATION' }), rt)),
+          h('label', { class: 'switch-row' }, off, h('span', {}, h('b', { text: 'Hide this element', style: 'font-size:14px' }))));
+      }
+      editPanel.append(h('button', { class: 'box-button', type: 'button', text: 'RESET THIS ELEMENT', on: { click: () => { if (draft.custom) delete draft.custom[selId]; syncFn(); drawEditPanel(); } } }));
+    }
+    editPanel.append(h('div', { class: 'row-actions' },
+      h('button', { class: 'box-button', type: 'button', text: 'RESET ALL POSITIONS', on: { click: () => { draft.custom = {}; selId = null; syncFn(); drawEditPanel(); } } }),
+      h('button', { class: 'box-button solid', type: 'button', text: 'DONE', on: { click: () => { editMode = false; selId = null; drawPreview(); drawEditPanel(); } } })));
   }
   function drawNotes() {
     notes.replaceChildren();
@@ -278,6 +345,7 @@ async function studio(box, alive) {
     const saveBtn = h('button', { class: 'box-button solid', type: 'button', text: 'SAVE CHANGES' });
     const resetBtn = h('button', { class: 'box-button', type: 'button', text: 'RESET TO SAVED' });
     const dupBtn = h('button', { class: 'box-button', type: 'button', text: 'DUPLICATE FRAME' });
+    syncFn = () => sync();
     const sync = () => { const ok = valid(); saveBtn.disabled = !(ok && dirty()); resetBtn.disabled = !dirty(); err.textContent = ok ? '' : 'Fix the highlighted fields before saving.'; drawPreview(); drawNotes(); };
     const nameIn = h('input', { type: 'text', value: draft.name, maxLength: 40, on: { input: () => { draft.name = nameIn.value; sync(); } } });
     const rows = COLOR_FIELDS.map(([k, label]) => {
@@ -296,18 +364,18 @@ async function studio(box, alive) {
     const act = h('input', { type: 'checkbox', checked: !!draft.is_active, on: { change: () => { draft.is_active = act.checked; sync(); } } });
     saveBtn.addEventListener('click', () => busy(saveBtn, 'SAVING…', async () => {
       if (!valid()) return;
-      const diff = {}; for (const k of Object.keys(draft)) if (k !== 'id' && draft[k] !== saved[k]) diff[k] = k === 'name' ? draft[k].trim() : (k === 'bg' || COLOR_FIELDS.some(([c]) => c === k) ? draft[k].toUpperCase() : draft[k]);
+      const diff = {}; for (const k of Object.keys(draft)) if (k !== 'id' && JSON.stringify(draft[k]) !== JSON.stringify(saved[k])) diff[k] = k === 'custom' ? (D ? D.clean(draft[k]) : draft[k]) : k === 'name' ? draft[k].trim() : (k === 'bg' || COLOR_FIELDS.some(([c]) => c === k) ? draft[k].toUpperCase() : draft[k]);
       const r = await sb.from('ef_frames').update(diff).eq('id', curId).select().single();
       if (r.error) { err.textContent = errMsg(r.error); return; }
       toast('Frame saved. Postcards using it are updated.'); frames = await fetchFrames(); const f = frames.find(x => x.id === curId); pick(f); drawAll(); await syncSite();
     }));
-    resetBtn.addEventListener('click', () => { draft = { ...saved }; drawForm(); drawPreview(); drawNotes(); });
+    resetBtn.addEventListener('click', () => { draft = JSON.parse(JSON.stringify(saved)); selId = null; drawForm(); drawPreview(); drawNotes(); });
     dupBtn.addEventListener('click', () => busy(dupBtn, 'DUPLICATING…', async () => {
       const src = frames.find(x => x.id === curId); const base = (slugify(src.id) || 'frame').replace(/-copy(-\d+)?$/, '').slice(0, 50);
       let id = base + '-copy', n = 2; while (frames.some(x => x.id === id)) id = base + '-copy-' + n++;
-      const row = { id, name: (src.name + ' Copy').slice(0, 40), bg: src.bg, border: src.border, accent: src.accent, text_color: src.text_color, star: src.star, shadow: src.shadow, radius: src.radius, pattern: src.pattern, layout: src.layout, decor: src.decor, big_shape: src.big_shape, halftone: src.halftone, deco1: src.deco1, deco2: src.deco2, sort_order: Math.max(0, ...frames.map(x => x.sort_order)) + 1, is_active: true };
+      const row = { id, name: (src.name + ' Copy').slice(0, 40), bg: src.bg, border: src.border, accent: src.accent, text_color: src.text_color, star: src.star, shadow: src.shadow, radius: src.radius, pattern: src.pattern, layout: src.layout, decor: src.decor, big_shape: src.big_shape, halftone: src.halftone, deco1: src.deco1, deco2: src.deco2, custom: src.custom || {}, sort_order: Math.max(0, ...frames.map(x => x.sort_order)) + 1, is_active: true };
       const r = await sb.from('ef_frames').insert(row); if (r.error) { err.textContent = errMsg(r.error); return; }
-      toast('Frame duplicated as “' + row.name + '”.'); frames = await fetchFrames(); pick(frames.find(x => x.id === id)); drawAll(); await syncSite();
+      toast('Frame duplicated as “' + row.name + '”.'); frames = await fetchFrames(); pick(frames.find(x => x.id === id) || frames[0]); drawAll(); await syncSite();
     }));
     const sample = h('select', { attrs: { 'aria-label': 'Preview with postcard' }, on: { change: () => { sampleId = sample.value; drawPreview(); } } }, cards.map(c => h('option', { value: c.id, text: c.display_name, selected: c.id === sampleId })));
     form.append(h('span', { class: 'tiny-heading', text: 'EDITING FRAME · ' + saved.id }),
@@ -325,8 +393,8 @@ async function studio(box, alive) {
   function drawAll() { drawList(); drawForm(); }
   box.replaceChildren(h('h2', { text: 'Frame Studio' }),
     h('p', { class: 'hint', text: 'Edits are a draft until you press Save Changes. Photos, names and border text are never touched here.' }),
-    h('div', { class: 'studio', style: 'margin-top:18px' }, h('div', {}, h('span', { class: 'tiny-heading', text: 'FRAMES' }), h('div', { style: 'margin-top:10px' }, listEl)), h('div', { class: 'panel shadow' }, form), h('div', {}, h('span', { class: 'tiny-heading', text: 'LIVE PREVIEW' }), stage)));
-  drawAll();
+    h('div', { class: 'studio', style: 'margin-top:18px' }, h('div', {}, h('span', { class: 'tiny-heading', text: 'FRAMES' }), h('div', { style: 'margin-top:10px' }, listEl)), h('div', { class: 'panel shadow' }, form), h('div', {}, h('span', { class: 'tiny-heading', text: 'LIVE PREVIEW' }), stage, editPanel)));
+  drawAll(); drawEditPanel();
 }
 
 /* ---------- COMMENTS ---------- */
