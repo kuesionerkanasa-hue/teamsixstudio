@@ -70,7 +70,7 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   ok('galeri: hitungan nyata 01 / 08', (await page.textContent('#gallery-count')).trim() === '01 / 08 PLAYERS');
   ok('teks border asli "Farfalla" tampil, lainnya kosong', (await page.locator('#gallery-track .energy-name').allTextContents()).filter(Boolean).join() === 'Farfalla');
   ok('tidak ada tag ONLINE palsu', (await page.locator('text=ONLINE').count()) === 0);
-  ok('foto https dimuat, lainnya placeholder', (await page.locator('#gallery-track img').count()) === 1 && (await page.locator('#gallery-track .no-photo').count()) === 7);
+  ok('foto https dimuat, lainnya placeholder', (await page.locator('#gallery-track .arch img').count()) === 1 && (await page.locator('#gallery-track .no-photo').count()) === 7);
   ok('spotlight: empty-state jujur saat 0 vote', /No votes yet/.test(await page.textContent('#spot-body')));
   ok('tidak ada badge saat 0 vote/komentar', (await page.locator('.tag.fav, .tag.disc, .tag.spot').count()) === 0);
   ok('komentar: empty state', /No comments yet/.test(await page.textContent('#comment-area')));
@@ -121,6 +121,7 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('#download-look')]);
   ok('unduh PNG postcard berjalan', !!dl && /postcard-.*\.png$/.test(dl.suggestedFilename()), dl ? dl.suggestedFilename() : 'no download');
   if (dl) { await dl.saveAs(OUT + '/exported-postcard.png'); }
+  ok('QR kecil ada di setiap kartu galeri', (await page.locator('#gallery-track .profile-card .qr-chip img').count()) >= 8);
 
   // ---------- Admin: password salah / bukan admin / admin ----------
   await page.click('#member-btn'); // sign out

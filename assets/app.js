@@ -279,6 +279,32 @@ function openAdminModal() {
   openModal(modalShell('RESTRICTED ACCESS', 'Admin Control', 'Manage the studio, frames, and community.', form));
 }
 
+/* ---------- QR code (dibuat di browser; tanpa layanan luar) ---------- */
+function cardUrl(card) {
+  const base = ((window.EFS_CONFIG && window.EFS_CONFIG.SITE_URL) || '').trim() || (location.origin + location.pathname);
+  return base + '#card/' + card.slug;
+}
+const _qrCache = {};
+function qrFor(url) {
+  if (!_qrCache[url]) { const q = window.qrcode(0, 'M'); q.addData(url); q.make(); _qrCache[url] = q; }
+  return _qrCache[url];
+}
+function qrChip(card) {
+  try {
+    const url = cardUrl(card), q = qrFor(url);
+    return h('a', { class: 'qr-chip', href: url, title: 'Scan to open this postcard', attrs: { 'aria-label': 'QR code linking to the postcard of ' + card.display_name },
+      on: { click: e => e.stopPropagation() } },
+      h('img', { src: q.createDataURL(4, 0), alt: '', width: 52, height: 52 }));
+  } catch (e) { return null; }
+}
+function drawQr(x, url, px, py, size) {
+  const q = qrFor(url), n = q.getModuleCount(), pad = 14, cell = (size - pad * 2) / n;
+  x.fillStyle = '#FFFFFF'; x.fillRect(px, py, size, size);
+  x.lineWidth = 3; x.strokeStyle = '#17151C'; x.strokeRect(px, py, size, size);
+  x.fillStyle = '#17151C';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) x.fillRect(px + pad + c * cell, py + pad + r * cell, Math.ceil(cell), Math.ceil(cell));
+}
+
 /* ---------- postcard rendering ---------- */
 const SILHOUETTE = '<svg viewBox="0 0 300 330" aria-hidden="true" focusable="false"><circle cx="150" cy="120" r="62" fill="#9d9aa3"/><path d="M30 330c0-96 54-150 120-150s120 54 120 150z" fill="#9d9aa3"/></svg>';
 function photoNode(card) {
@@ -325,8 +351,9 @@ function postcard(card, opts = {}) {
     h('span', { class: 'energy-name', text: card.energy_label || '' }),
     h('div', { class: 'identity-line' },
       h('div', {}, h('h3', { class: 'profile-name', text: card.display_name }), h('span', { class: 'handle', text: card.handle || '' })),
-      h('button', { class: 'circle-button download', type: 'button', text: '↓', attrs: { 'aria-label': 'Download postcard image of ' + card.display_name },
-        on: { click: e => { e.stopPropagation(); downloadPostcard(card, frame); } } })),
+      h('div', { class: 'id-tools' }, qrChip(card),
+        h('button', { class: 'circle-button download', type: 'button', text: '↓', attrs: { 'aria-label': 'Download postcard image of ' + card.display_name },
+          on: { click: e => { e.stopPropagation(); downloadPostcard(card, frame); } } }))),
     card.mood_quote ? h('div', { class: 'quote-row' }, h('span', { class: 'mood', text: 'MOOD' }), h('p', { class: 'quote', text: card.mood_quote })) : null);
   el.append(shell, copy);
   if (opts.meta !== false) {
@@ -399,7 +426,7 @@ function openCard(slug) {
   $('#card').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
 async function shareCard(card) {
-  const url = location.origin + location.pathname + '#card/' + card.slug;
+  const url = cardUrl(card);
   try {
     if (navigator.share) { await navigator.share({ title: card.display_name + ' — Ethics Frame Studio', url }); return; }
     await navigator.clipboard.writeText(url); toast('Link copied.');
@@ -685,8 +712,13 @@ async function renderPostcardCanvas(card, frame) {
   if (card.mood_quote) {
     y += 34; x.fillStyle = F.accent; x.fillRect(50, y, W - 100, 2); y += 38;
     x.fillRect(50, y - 22, 78, 28); x.fillStyle = '#fff'; x.font = '400 17px "Space Mono"'; x.fillText('MOOD', 62, y - 2);
-    x.fillStyle = F.text_color; x.font = 'italic 400 34px Fraunces'; wrapLines(x, card.mood_quote, W - 100 - 100).slice(0, 2).forEach((ln, i) => x.fillText(ln, 148, y + i * 42));
+    x.fillStyle = F.text_color; x.font = 'italic 400 34px Fraunces'; wrapLines(x, card.mood_quote, 540).slice(0, 2).forEach((ln, i) => x.fillText(ln, 148, y + i * 42));
   }
+  try {
+    const QS = 160, qx = W - 50 - QS, qy = sy + sh + 40;
+    drawQr(x, cardUrl(card), qx, qy, QS);
+    x.fillStyle = F.text_color; x.font = '400 16px "Space Mono"'; x.textAlign = 'center'; x.fillText('SCAN ME', qx + QS / 2, qy + QS + 26);
+  } catch (e) { /* QR gagal: kartu tetap diunduh */ }
   x.fillStyle = '#77737a'; x.font = '400 17px "Space Mono"'; x.textAlign = 'center'; x.fillText('ETHICS FRAME STUDIO · KELOMPOK 6 · ETIKA ADMINISTRASI DAN KEPEGAWAIAN', W / 2, H - 28);
   return { canvas: c, photoFailed };
 }

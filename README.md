@@ -23,7 +23,8 @@ tests/                uji RLS di Postgres lokal (stub Supabase)
 5. **Authentication → URL Configuration**: isi *Site URL* dengan alamat situs (mis. `https://<user>.github.io/<repo>/`) supaya tautan konfirmasi email kembali ke situs.
 6. **Authentication → Providers**: sebaiknya biarkan *Anonymous sign-ins* mati. Kalaupun menyala, akun anonymous ditolak database untuk vote/komentar.
 7. Masuk lewat tombol **Admin** → tab **Postcards** → *Edit* tiap anggota → unggah foto asli (JPG/PNG/WebP, maks 5 MB). Foto tidak pernah diubah otomatis.
-8. Deploy: push folder ini ke GitHub, aktifkan Pages.
+8. **QR code**: isi `SITE_URL` di `assets/config.js` dengan alamat GitHub Pages (mis. `https://<user>.github.io/<repo>/`). QR di setiap postcard (dan di PNG unduhan) mengarah ke `SITE_URL#card/<slug>`. Jika kosong, memakai alamat halaman saat QR dibuat — jangan unduh dari `localhost`/preview. QR dibuat di browser (pustaka `assets/qr.js`, MIT), tanpa layanan luar.
+9. Deploy: push folder ini ke GitHub, aktifkan Pages.
 
 ## Data asli yang dijaga
 Seed hanya berisi 8 anggota dari desain Canva (nama, username, mood, preset frame, teks border "Farfalla" milik Anisa). Foto **sengaja kosong** (tampil "PHOTO PENDING") karena gambar `canva://` tidak bisa diekspor otomatis — unggah dari panel admin. `on conflict do nothing` berarti menjalankan ulang skema tidak menimpa data yang sudah Anda ubah.
