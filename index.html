@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ETHICS FRAME STUDIO — Kelompok 6</title>
+<meta name="description" content="Etika Administrasi dan Kepegawaian — Kelompok 6. A Y2K postcard gallery: different people, shared values.">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="banner" class="banner" hidden role="alert"></div>
+
+<header class="site-header">
+  <div class="page-width nav-inner">
+    <a class="brand" href="#top" aria-label="Kelompok 6 — back to top">
+      <svg class="badge" viewBox="0 0 64 46" aria-hidden="true"><rect x="1" y="1" width="62" height="44" fill="#17151C"/><text x="32" y="31" font-family="Arial,sans-serif" font-weight="800" font-size="22" fill="#C9FF38" text-anchor="middle">T6</text></svg>
+      <span class="wordmark">KELOMPOK 6</span>
+    </a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="#studio">STUDIO</a>
+      <a href="#profiles">PROFILES</a>
+      <a href="#spotlight" id="nav-spotlight">SPOTLIGHT</a>
+      <a href="#frames">FRAMES</a>
+    </nav>
+    <div class="nav-actions">
+      <span id="who" class="who" hidden></span>
+      <button id="member-btn" class="pill ghost" type="button">Sign in</button>
+      <button id="admin-btn" class="pill" type="button">Admin</button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section id="studio" class="hero" aria-labelledby="hero-title">
+    <div class="page-width hero-inner">
+      <span class="hero-label">✦ ETHICS FRAME STUDIO — VOL. 01</span>
+      <h1 id="hero-title"><span>Your people,</span><em>framed with integrity.</em></h1>
+      <span class="chrome-star star-one" aria-hidden="true">✳</span><span class="chrome-star star-two" aria-hidden="true">✦</span>
+      <div class="hero-bottom">
+        <span class="hero-to" aria-hidden="true">CODE:</span>
+        <p class="hero-copy">DIFFERENT PEOPLE. SHARED VALUES. ETHICS IN EVERY ACTION.</p>
+      </div>
+      <span class="academic-caption">ETIKA ADMINISTRASI DAN KEPEGAWAIAN · 2026</span>
+    </div>
+  </section>
+
+  <section id="profiles" class="section" aria-labelledby="gallery-title">
+    <div class="page-width">
+      <div class="section-heading">
+        <div>
+          <span class="section-index" aria-hidden="true">01</span>
+          <h2 id="gallery-title">Choose your Character</h2>
+          <span class="section-note">THE PEOPLE / THE PERSONALITIES / THE FRAMES</span>
+        </div>
+        <div class="gallery-controls">
+          <span id="gallery-count" class="count" aria-live="polite"></span>
+          <button id="previous" class="circle-button" type="button" aria-label="Previous postcard">←</button>
+          <button id="next" class="circle-button" type="button" aria-label="Next postcard">→</button>
+          <button id="shuffle" class="box-button" type="button">⤨ SHUFFLE ENERGY</button>
+          <button id="unshuffle" class="box-button" type="button" hidden>RESET ORDER</button>
+        </div>
+      </div>
+      <div id="gallery-viewport" class="gallery-viewport" aria-label="Postcard gallery" tabindex="-1">
+        <div id="gallery-track" class="gallery-track"></div>
+      </div>
+      <p class="hint" id="shuffle-note" hidden>Shuffle changes the order you see here only. It never changes the saved order.</p>
+    </div>
+  </section>
+
+  <section id="spotlight" class="section spotlight" aria-labelledby="spotlight-title">
+    <div class="page-width">
+      <div class="section-heading">
+        <div>
+          <span class="section-index" aria-hidden="true">02</span>
+          <h2 id="spotlight-title">THE COMMUNITY SPOTLIGHT</h2>
+          <span class="section-note">DIFFERENT PEOPLE. SHARED VALUES.</span>
+        </div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Spotlight views" id="spot-tabs"></div>
+      <div class="spot-meta" id="spot-meta"></div>
+      <p class="spot-rule" id="spot-rule"></p>
+      <div id="spot-body"></div>
+    </div>
+  </section>
+
+  <section id="card" class="section" aria-labelledby="detail-title">
+    <div class="page-width">
+      <div class="section-heading">
+        <div>
+          <span class="section-index" aria-hidden="true">03</span>
+          <h2 id="detail-title">The selected postcard</h2>
+          <span class="section-note">VOTE · COMMENT · SHARE</span>
+        </div>
+      </div>
+      <div id="detail" class="detail-grid"></div>
+    </div>
+  </section>
+
+  <section id="frames" class="section" style="padding-top:20px" aria-labelledby="editor-title">
+    <div class="page-width">
+      <div class="section-heading">
+        <div>
+          <span class="section-index" aria-hidden="true">04</span>
+          <h2 id="editor-title">The frame collection</h2>
+          <span class="section-note">TRY A FRAME ON THE SELECTED POSTCARD — PREVIEW ONLY, NOTHING IS SAVED</span>
+        </div>
+      </div>
+      <div class="editor-shell">
+        <div class="editor-upper">
+          <div class="editor-identity">
+            <span id="editor-index" class="editor-index">01</span>
+            <div>
+              <span class="tiny-heading">NOW PREVIEWING</span>
+              <h3 id="editor-name" class="editor-member"></h3>
+              <p id="editor-quote" class="editor-quotation"></p>
+            </div>
+          </div>
+          <div class="preset-panel">
+            <span class="tiny-heading">FRAME ENERGY</span>
+            <div id="presets" class="presets" role="group" aria-label="Frame presets"></div>
+          </div>
+        </div>
+        <div class="editor-lower">
+          <div id="preview-tile" class="preview-tile"><div class="arch" id="preview-arch"></div></div>
+          <div class="preview-copy">
+            <span class="tiny-heading">LOOKING GOOD</span>
+            <p id="preview-title" class="preview-title"></p>
+          </div>
+        </div>
+        <div class="save-wrap">
+          <button id="download-look" class="save-button" type="button"><span>Download this look</span><span aria-hidden="true">→</span></button>
+          <p id="frame-feedback" class="feedback" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="showcase" class="showcase" aria-labelledby="showcase-title">
+    <div class="page-width">
+      <div class="showcase-intro">
+        <div>
+          <span class="section-index" aria-hidden="true">05</span>
+          <h2 id="showcase-title">ETIKA ADMINISTRASI DAN KEPEGAWAIAN</h2>
+        </div>
+        <span class="showcase-sub">GOOD PEOPLE. GOOD GOVERNANCE.</span>
+      </div>
+      <div id="showcase-grid" class="showcase-grid"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="page-width footer-inner">
+    <span>ETHICS FRAME STUDIO</span>
+    <span>KELOMPOK 6</span>
+    <span>INTEGRITAS · AKUNTABILITAS · PROFESIONALISME</span>
+  </div>
+</footer>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<div id="modal-root"></div>
+<div id="admin-root"></div>
+
+<noscript><div class="banner">This site needs JavaScript to load postcards, votes and comments.</div></noscript>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js" integrity="sha384-K1nraABOP/zFehpLIUksXebbs7jMpB8gYMlb+uhVKZcWT/9Vkq1+qhv6ndC+1Yuz" crossorigin="anonymous"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
