@@ -381,3 +381,16 @@ table.data .thumb{width:40px;height:46px;padding:3px}
 .edit-panel{margin-top:14px;border:1px solid var(--ink,#17151C);background:#FAF9F5;padding:12px 14px;display:grid;gap:10px}
 .edit-panel .row-actions{margin-top:0}
 .edit-panel label.field{margin:0}
+
+/* About & house rules */
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:8px}
+.about-card{background:var(--card);border:1px solid var(--ink);padding:20px 22px;box-shadow:5px 5px 0 var(--ink)}
+.about-card h3{margin:0 0 10px;font:800 20px var(--f-sans);letter-spacing:-.02em}
+.about-card p,.about-card li{font-size:14px;line-height:1.6}
+.about-card ul{margin:10px 0 0;padding-left:18px;display:grid;gap:7px}
+.about-card .values{list-style:none;padding:0}
+.about-card .values li{border-left:4px solid var(--lime);padding-left:10px}
+.about-extra:empty{display:none}
+.about-extra{font:12px var(--f-mono);margin-top:12px}
+.handle-link{text-decoration:underline;text-underline-offset:2px;color:var(--tx)}
+.handle-link:hover,.handle-link:focus-visible{opacity:1;background:var(--lime)}

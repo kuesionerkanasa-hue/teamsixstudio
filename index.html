@@ -9,12 +9,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="canonical" href="https://kuesionerkanasa-hue.github.io/teamsixstudio/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ethics Frame Studio">
+<meta property="og:title" content="ETHICS FRAME STUDIO — Kelompok 6">
+<meta property="og:description" content="Different people. Shared values. Pick a postcard, vote, comment, and download your frame.">
+<meta property="og:url" content="https://kuesionerkanasa-hue.github.io/teamsixstudio/">
+<meta property="og:image" content="https://kuesionerkanasa-hue.github.io/teamsixstudio/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ethics Frame Studio — Tim 6">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ETHICS FRAME STUDIO — Kelompok 6">
+<meta name="twitter:description" content="Different people. Shared values. Pick a postcard, vote, comment, and download your frame.">
+<meta name="twitter:image" content="https://kuesionerkanasa-hue.github.io/teamsixstudio/assets/og-image.png">
 <link rel="icon" href="assets/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/favicon-512.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#C9FF38">
-<link rel="stylesheet" href="assets/style.css?v=5">
+<link rel="stylesheet" href="assets/style.css?v=6">
 </head>
 <body>
 <div id="banner" class="banner" hidden role="alert"></div>
@@ -30,6 +44,7 @@
       <a href="#profiles">PROFILES</a>
       <a href="#spotlight" id="nav-spotlight">SPOTLIGHT</a>
       <a href="#frames">FRAMES</a>
+      <a href="#about">ABOUT</a>
     </nav>
     <div class="nav-actions">
       <span id="who" class="who" hidden></span>
@@ -144,11 +159,54 @@
     </div>
   </section>
 
+  <section id="about" class="section about" aria-labelledby="about-title">
+    <div class="page-width">
+      <div class="section-heading">
+        <div>
+          <span class="section-index" aria-hidden="true">05</span>
+          <h2 id="about-title">About &amp; house rules</h2>
+          <span class="section-note">TENTANG PROYEK · ATURAN MAIN · PRIVASI</span>
+        </div>
+      </div>
+      <div class="about-grid">
+        <article class="about-card">
+          <h3>Tentang proyek</h3>
+          <p>Ethics Frame Studio adalah proyek Kelompok 6 untuk mata kuliah <b>Etika Administrasi dan Kepegawaian</b>. Setiap anggota tampil sebagai postcard dengan bingkai Y2K berbeda — gagasannya: <i>orang yang berbeda, nilai yang sama</i>.</p>
+          <ul class="values">
+            <li><b>Integritas</b> — data apa adanya: tidak ada vote, komentar, atau aktivitas palsu.</li>
+            <li><b>Akuntabilitas</b> — setiap perubahan admin tercatat, dan komentar bisa dilaporkan serta dimoderasi.</li>
+            <li><b>Profesionalisme</b> — saling menghargai di kolom komentar.</li>
+          </ul>
+          <p id="about-extra" class="about-extra"></p>
+        </article>
+        <article class="about-card">
+          <h3>Aturan main</h3>
+          <ul>
+            <li>Vote dan komentar butuh akun. <b>Satu akun = satu vote per postcard</b>, dan vote bisa ditarik kembali.</li>
+            <li>Komentar 1–500 karakter, maksimal 5 komentar per menit. Teks tampil apa adanya (tanpa HTML).</li>
+            <li>Komentar yang melanggar bisa dilaporkan; admin dapat menyembunyikannya. Pemilik komentar bisa mengubah atau menghapus komentarnya sendiri.</li>
+            <li>Voting/komentar bisa ditutup admin sewaktu-waktu; hitungan yang tampil selalu hasil nyata dari database.</li>
+            <li>Foto anggota hanya dipasang atas izin orang yang bersangkutan.</li>
+          </ul>
+        </article>
+        <article class="about-card">
+          <h3>Privasi</h3>
+          <ul>
+            <li><b>Email</b> hanya dipakai untuk login (dikelola Supabase Auth) dan <b>tidak pernah ditampilkan</b> ke publik.</li>
+            <li>Yang tampil publik: <b>nama tampilan</b> pilihanmu dan isi komentar. Vote kamu tidak ditampilkan ke orang lain.</li>
+            <li>Tidak ada pelacak iklan. Font dimuat dari Google Fonts; pustaka login dari jsDelivr.</li>
+            <li>Ingin akun atau komentarmu dihapus? Hapus komentar sendiri lewat tombol di komentar, atau hubungi admin kelompok.</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <section id="showcase" class="showcase" aria-labelledby="showcase-title">
     <div class="page-width">
       <div class="showcase-intro">
         <div>
-          <span class="section-index" aria-hidden="true">05</span>
+          <span class="section-index" aria-hidden="true">06</span>
           <h2 id="showcase-title">ETIKA ADMINISTRASI DAN KEPEGAWAIAN</h2>
         </div>
         <span class="showcase-sub">GOOD PEOPLE. GOOD GOVERNANCE.</span>
@@ -173,10 +231,10 @@
 <noscript><div class="banner">This site needs JavaScript to load postcards, votes and comments.</div></noscript>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js" integrity="sha384-K1nraABOP/zFehpLIUksXebbs7jMpB8gYMlb+uhVKZcWT/9Vkq1+qhv6ndC+1Yuz" crossorigin="anonymous"></script>
-<script src="assets/config.js?v=5"></script>
-<script src="assets/qr.js?v=5"></script>
-<script src="assets/decor.js?v=5"></script>
-<script src="assets/app.js?v=5"></script>
-<script src="assets/admin.js?v=5"></script>
+<script src="assets/config.js?v=6"></script>
+<script src="assets/qr.js?v=6"></script>
+<script src="assets/decor.js?v=6"></script>
+<script src="assets/app.js?v=6"></script>
+<script src="assets/admin.js?v=6"></script>
 </body>
 </html>

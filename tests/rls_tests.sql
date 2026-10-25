@@ -200,6 +200,11 @@ select t.expect_err('validasi: custom bukan object ditolak', $q$update public.ef
 select t.expect_err('validasi: custom terlalu besar ditolak', $q$update public.ef_frames set custom=jsonb_build_object('a', repeat('x', 5000)) where id='photobooth'$q$, array['23514']);
 select t.expect_err('validasi: pattern tak dikenal', $q$update public.ef_frames set pattern='x' where id='bubble-pop'$q$, array['23514']);
 select t.expect_err('validasi: photo_url javascript: ditolak', $q$update public.ef_profiles set photo_url='javascript:alert(1)' where slug='arjunna'$q$, array['23514']);
+select t.expect_rows('admin: set profile_url https', $q$update public.ef_profiles set profile_url='https://instagram.com/nolvless_00' where slug='anisa-fatimah'$q$, 1);
+select t.expect_err('validasi: profile_url javascript: ditolak', $q$update public.ef_profiles set profile_url='javascript:alert(1)' where slug='anisa-fatimah'$q$, array['23514']);
+select t.expect_err('validasi: profile_url http (bukan https) ditolak', $q$update public.ef_profiles set profile_url='http://x.com/a' where slug='anisa-fatimah'$q$, array['23514']);
+select t.expect_err('validasi: profile_url ber-spasi/tag ditolak', $q$update public.ef_profiles set profile_url='https://x.com/a b<script>' where slug='anisa-fatimah'$q$, array['23514']);
+select t.expect_val('ef_gallery membawa profile_url', $q$select profile_url from public.ef_gallery() where slug='anisa-fatimah'$q$, 'https://instagram.com/nolvless_00');
 select t.expect_rows('admin: set photo_url https', $q$update public.ef_profiles set photo_url='https://example.com/a.jpg' where slug='arjunna'$q$, 1);
 select t.expect_rows('admin: kembalikan photo_url null', $q$update public.ef_profiles set photo_url=null where slug='arjunna'$q$, 1);
 select t.expect_err('integritas: frame yang dipakai tak bisa dihapus', $q$delete from public.ef_frames where id='bubble-pop'$q$, array['23503']);

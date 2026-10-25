@@ -56,6 +56,7 @@ function applyFrame(el, frame) {
   el.style.setProperty('--rad', f.radius + 'px');
   return f;
 }
+const siteBase = () => ((CFG.SITE_URL || '').trim() || (location.origin + location.pathname));
 const httpsUrl = u => (typeof u === 'string' && /^https:\/\//i.test(u)) ? u : null;
 
 function timeAgo(iso) {
@@ -79,6 +80,8 @@ function errMsg(e) {
   if (e.code === '23505') return 'That was already saved.';
   if (/Too many comments/i.test(m)) return 'Too many comments — please wait a moment.';
   if (/Failed to fetch|NetworkError/i.test(m)) return 'Network problem. Please check your connection.';
+  if (/rate limit|too many requests|over_email_send_rate_limit|over_request_rate_limit/i.test(m) || e.status === 429) return 'Too many email requests right now. Please wait a few minutes and try again.';
+  if (/already registered|already been registered/i.test(m)) return 'That email already has an account. Try signing in instead.';
   return m;
 }
 
@@ -217,10 +220,12 @@ function openMemberModal(reason) {
   const pw = pwField('m-pw', 'PASSWORD (MIN. 8 CHARACTERS)', 'current-password');
   const submit = h('button', { class: 'submit', type: 'submit' }, h('span', { text: 'Sign in' }), h('span', { text: '→' }));
   const sw = h('button', { class: 'link-btn', type: 'button' });
+  const forgot = h('p', { class: 'switch' }, h('button', { class: 'link-btn', type: 'button', text: 'Forgot your password?', on: { click: () => openResetModal(email.value.trim()) } }));
   const lead = h('p', { class: 'lead' });
   const title = h('h2', { id: 'modal-title' });
   const setMode = m => {
     mode = m; err.textContent = ''; err.classList.remove('ok-line');
+    forgot.hidden = m !== 'in';
     nameF.hidden = m === 'in'; name.required = m === 'up';
     pw.input.autocomplete = m === 'in' ? 'current-password' : 'new-password';
     submit.firstChild.textContent = m === 'in' ? 'Sign in' : 'Create account';
@@ -241,7 +246,7 @@ function openMemberModal(reason) {
         const dn = name.value.trim();
         if (!dn) throw new Error('Please enter a display name.');
         const { data, error } = await sb.auth.signUp({ email: email.value.trim(), password: pw.input.value,
-          options: { data: { display_name: dn }, emailRedirectTo: location.origin + location.pathname } });
+          options: { data: { display_name: dn }, emailRedirectTo: siteBase() } });
         if (error) throw error;
         if (data.session) { closeModal(); toast('Account created.'); }
         else { setMode('in'); err.classList.add('ok-line'); err.textContent = 'Check your email to confirm your account, then sign in.'; }
@@ -252,9 +257,39 @@ function openMemberModal(reason) {
   } } }, nameF, h('label', { class: 'field' }, h('span', { text: 'EMAIL' }), email), pw.node, err, submit);
   const shell = h('div', { class: 'modal', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'modal-title' } },
     h('button', { class: 'circle-button close', type: 'button', text: '×', attrs: { 'aria-label': 'Close' }, on: { click: () => closeModal() } }),
-    h('span', { class: 'modal-label', text: 'MEMBER ACCESS' }), title, lead, form, h('p', { class: 'switch' }, sw));
+    h('span', { class: 'modal-label', text: 'MEMBER ACCESS' }), title, lead, form, h('p', { class: 'switch' }, sw), forgot);
   setMode('in');
   openModal(shell);
+}
+
+function openResetModal(prefill) {
+  const err = h('p', { class: 'err-line', attrs: { role: 'alert' } });
+  const email = h('input', { type: 'email', required: true, autocomplete: 'email', value: prefill || '' });
+  const submit = h('button', { class: 'submit', type: 'submit' }, h('span', { text: 'Send reset link' }), h('span', { text: '→' }));
+  const form = h('form', { on: { submit: async e => {
+    e.preventDefault(); err.textContent = ''; err.classList.remove('ok-line'); submit.disabled = true;
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email.value.trim(), { redirectTo: siteBase() });
+      if (error) throw error;
+      err.classList.add('ok-line'); err.textContent = 'If that email has an account, a reset link is on its way. Check your inbox (and spam).';
+    } catch (ex) { err.textContent = errMsg(ex); } finally { submit.disabled = false; }
+  } } }, h('label', { class: 'field' }, h('span', { text: 'EMAIL' }), email), err, submit);
+  openModal(modalShell('MEMBER ACCESS', 'Reset your password', 'We will email you a link to choose a new password.', form));
+  email.focus();
+}
+function openNewPasswordModal() {
+  const err = h('p', { class: 'err-line', attrs: { role: 'alert' } });
+  const pw = pwField('np-pw', 'NEW PASSWORD (MIN. 8 CHARACTERS)', 'new-password');
+  const submit = h('button', { class: 'submit', type: 'submit' }, h('span', { text: 'Save new password' }), h('span', { text: '→' }));
+  const form = h('form', { on: { submit: async e => {
+    e.preventDefault(); err.textContent = ''; submit.disabled = true;
+    try {
+      const { error } = await sb.auth.updateUser({ password: pw.input.value });
+      if (error) throw error;
+      closeModal(); toast('Password updated.');
+    } catch (ex) { err.textContent = errMsg(ex); } finally { submit.disabled = false; }
+  } } }, pw.node, err, submit);
+  openModal(modalShell('MEMBER ACCESS', 'Choose a new password', 'You followed a reset link. Set a new password to continue.', form));
 }
 
 function openAdminModal() {
@@ -355,6 +390,12 @@ function voteButton(card, extraClass) {
   if (!state.settings.voting_enabled && !voted) { b.title = 'Voting is currently closed'; }
   return b;
 }
+function handleNode(card) {
+  const u = httpsUrl(card.profile_url);
+  if (!u) return h('span', { class: 'handle', text: card.handle || '' });
+  return h('a', { class: 'handle handle-link', href: u, target: '_blank', rel: 'noopener noreferrer nofollow', text: (card.handle || 'Profile') + ' ↗',
+    attrs: { 'aria-label': 'Open profile of ' + card.display_name + ' in a new tab' }, on: { click: e => e.stopPropagation() } });
+}
 function postcard(card, opts = {}) {
   const frame = opts.frame || frameOf(card.frame_id);
   const el = h('article', { class: 'profile-card' + (opts.edit ? ' is-editing' : '') + (opts.selectable ? ' is-selectable' : '') + (opts.selected ? ' is-selected' : ''), dataset: { slug: card.slug } });
@@ -371,7 +412,7 @@ function postcard(card, opts = {}) {
   const copy = h('div', { class: 'card-copy' },
     h('span', { class: 'energy-name', text: card.energy_label || '' }),
     h('div', { class: 'identity-line' },
-      h('div', {}, h('h3', { class: 'profile-name', text: card.display_name }), h('span', { class: 'handle', text: card.handle || '' })),
+      h('div', {}, h('h3', { class: 'profile-name', text: card.display_name }), handleNode(card)),
       h('div', { class: 'id-tools' }, qrChip(card),
         h('button', { class: 'circle-button download', type: 'button', text: '↓', attrs: { 'aria-label': 'Download postcard image of ' + card.display_name },
           on: { click: e => { e.stopPropagation(); downloadPostcard(card, frame); } } }))),
@@ -527,7 +568,7 @@ function renderDetailMeta() {
   const right = h('div', { class: 'detail-info' },
     h('span', { class: 'tiny-heading', text: card.energy_label ? card.energy_label.toUpperCase() : 'POSTCARD' }),
     h('h3', { text: card.display_name }),
-    h('span', { class: 'handle', text: card.handle || '' }),
+    handleNode(card),
     h('div', { class: 'detail-stats' },
       h('span', { class: 'tag', text: card.vote_count + ' VOTES' }), h('span', { class: 'tag', text: card.comment_count + ' COMMENTS' }),
       h('span', { class: 'tag', text: 'FRAME: ' + frameOf(card.frame_id).name.toUpperCase() })),
@@ -776,6 +817,14 @@ async function downloadPostcard(card, frame, feedbackEl) {
     say('Preparing image…');
     const { canvas, photoFailed, qrFailed } = await renderPostcardCanvas(card, frame);
     const blob = await new Promise((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
+    const fname = 'postcard-' + (SLUG.test(card.slug) ? card.slug : 'card') + '.png';
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (ios && navigator.canShare && navigator.share) {
+      try {
+        const file = new File([blob], fname, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: card.display_name + ' — Ethics Frame Studio' }); say(qrFailed ? 'Image ready, but the QR code could not be drawn. Refresh and try again.' : 'Image ready — choose “Save Image” to keep it.', qrFailed); return; }
+      } catch (e) { if (e && e.name === 'AbortError') { say('Share cancelled.'); return; } /* lanjut ke unduhan biasa */ }
+    }
     const a = h('a', { href: URL.createObjectURL(blob), download: 'postcard-' + (SLUG.test(card.slug) ? card.slug : 'card') + '.png' });
     document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     say(qrFailed ? 'Image saved, but the QR code could not be drawn. Refresh the page (Ctrl+Shift+R) and try again.' : photoFailed ? 'Image saved, but the photo could not be embedded (blocked or unavailable).' : 'Image saved.', qrFailed || photoFailed);
@@ -827,10 +876,17 @@ addEventListener('pagehide', () => { try { sb.removeAllChannels(); } catch (e) {
 
 sb.auth.onAuthStateChange((event, session) => {
   setTimeout(() => {
+    if (event === 'PASSWORD_RECOVERY') { openNewPasswordModal(); return; }
     if (event === 'SIGNED_OUT') { state.user = null; state.isAdmin = false; state.myName = null; EFS.admin && EFS.admin.close && EFS.admin.close(); if (state.cards.length) { refreshGallery(); } renderAuthUi(); }
     else if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'USER_UPDATED')) { if (!state.user || state.user.id !== session.user.id) afterSignIn(session.user); }
   }, 0);
 });
+
+(function aboutExtra() {
+  const el = document.getElementById('about-extra'); if (!el) return;
+  const parts = [CFG.LECTURER, CFG.CONTACT].map(v => (typeof v === 'string' ? v.trim() : '')).filter(Boolean);
+  el.textContent = parts.join(' · ');
+})();
 
 (async function boot() {
   const ok = await loadAll();

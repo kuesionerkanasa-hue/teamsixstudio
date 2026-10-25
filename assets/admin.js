@@ -178,10 +178,10 @@ async function postcards(box, alive) {
   }
 
   function editor(c) {
-    const isNew = !c; const d = c || { display_name: '', handle: '', energy_label: '', mood_quote: '', frame_id: (frames[0] || {}).id, status: state.settings.publish_immediately ? 'published' : 'draft', photo_url: null };
+    const isNew = !c; const d = c || { display_name: '', handle: '', profile_url: '', energy_label: '', mood_quote: '', frame_id: (frames[0] || {}).id, status: state.settings.publish_immediately ? 'published' : 'draft', photo_url: null };
     const err = h('p', { class: 'err-line', attrs: { role: 'alert' } });
     const inp = (k, label, max, full) => { const i = h('input', { type: 'text', value: d[k] || '', maxLength: max }); return { i, n: h('label', { class: 'field' + (full ? ' full' : '') }, h('span', { text: label }), i) }; };
-    const name = inp('display_name', 'DISPLAY NAME *', 60), handle = inp('handle', 'USERNAME (e.g. @name)', 40),
+    const name = inp('display_name', 'DISPLAY NAME *', 60), handle = inp('handle', 'USERNAME (e.g. @name)', 40), plink = inp('profile_url', 'PROFILE LINK (https://… — makes the username clickable)', 200, true),
       label = inp('energy_label', 'BORDER TEXT (shown above the name)', 40), mood = inp('mood_quote', 'MOOD QUOTE', 140, true);
     const fr = h('select', {}, frames.map(x => h('option', { value: x.id, text: x.name + (x.is_active ? '' : ' (inactive)'), selected: x.id === d.frame_id })));
     const st = h('select', {}, ['published', 'draft', 'archived'].map(s => h('option', { value: s, text: s.toUpperCase(), selected: s === d.status })));
@@ -207,7 +207,9 @@ async function postcards(box, alive) {
           if (up.error) throw up.error;
           photo_url = sb.storage.from('ef-photos').getPublicUrl(path).data.publicUrl;
         }
-        const next = { display_name: dn, handle: handle.i.value.trim() || null, energy_label: label.i.value.trim() || null, mood_quote: mood.i.value.trim() || null, frame_id: fr.value, status: st.value };
+        const pl = plink.i.value.trim();
+        if (pl && !/^https:\/\/[^\s<>"]+$/.test(pl)) { err.textContent = 'Profile link must start with https:// and contain no spaces.'; return; }
+        const next = { profile_url: pl || null, display_name: dn, handle: handle.i.value.trim() || null, energy_label: label.i.value.trim() || null, mood_quote: mood.i.value.trim() || null, frame_id: fr.value, status: st.value };
         if (photo_url) next.photo_url = photo_url;
         let r;
         if (isNew) { next.slug = slug; next.sort_order = Math.max(0, ...cards.map(x => x.sort_order)) + 1; r = await sb.from('ef_profiles').insert(next); }
@@ -222,7 +224,7 @@ async function postcards(box, alive) {
     } } },
       h('span', { class: 'tiny-heading', text: isNew ? 'NEW POSTCARD' : 'EDITING · ' + d.display_name.toUpperCase() }),
       h('p', { class: 'hint', text: isNew ? 'New postcards follow your “publish immediately” setting by default.' : 'Only the fields you change are written. Photo and border text stay exactly as they are unless edited here.' }),
-      h('div', { class: 'form-grid', style: 'margin-top:14px' }, name.n, handle.n, label.n,
+      h('div', { class: 'form-grid', style: 'margin-top:14px' }, name.n, handle.n, plink.n, label.n,
         h('label', { class: 'field' }, h('span', { text: 'FRAME' }), fr), mood.n,
         h('label', { class: 'field' }, h('span', { text: 'STATUS' }), st),
         h('label', { class: 'field full' }, h('span', { text: 'PHOTO (JPG/PNG/WebP, max 5 MB)' }), file, cur)),
@@ -445,6 +447,30 @@ async function comments(box, alive) {
 }
 
 /* ---------- SETTINGS ---------- */
+async function fetchAllRows(table, cols, order) {
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const r = await sb.from(table).select(cols).order(order).range(from, from + 999);
+    if (r.error) throw r.error; out.push(...r.data); if (r.data.length < 1000) break;
+  }
+  return out;
+}
+async function downloadBackup(btn) {
+  await busy(btn, 'PREPARING…', async () => {
+    const [profiles, frames, comments, votes, users, set] = await Promise.all([
+      fetchAllRows('ef_profiles', '*', 'sort_order'), fetchAllRows('ef_frames', '*', 'sort_order'),
+      fetchAllRows('ef_comments', 'id,profile_id,user_id,body,status,created_at,updated_at', 'created_at'),
+      fetchAllRows('ef_votes', 'profile_id,user_id,created_at', 'created_at'),
+      fetchAllRows('ef_user_profiles', 'user_id,display_name,created_at', 'created_at'),
+      sb.from('ef_settings').select('*').eq('id', 1).single()]);
+    const data = { app: 'ethics-frame-studio', exported_at: new Date().toISOString(), note: 'Tidak berisi email atau password. Foto ada di storage bucket ef-photos (URL ada di profiles.photo_url).',
+      settings: set.data, frames, profiles, user_profiles: users, comments, votes };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = h('a', { href: URL.createObjectURL(blob), download: 'ef-backup-' + new Date().toISOString().slice(0, 10) + '.json' });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('Backup downloaded (' + profiles.length + ' postcards, ' + comments.length + ' comments, ' + votes.length + ' votes).');
+  });
+}
 async function settings(box, alive) {
   const r = await sb.from('ef_settings').select('*').eq('id', 1).single(); if (r.error) throw r.error; if (!alive()) return;
   const s = { ...r.data }; const [v, c] = await Promise.all([countOf(sb.from('ef_votes').select('id', { count: 'exact', head: true })), countOf(sb.from('ef_comments').select('id', { count: 'exact', head: true }).eq('status', 'visible'))]);
@@ -465,7 +491,10 @@ async function settings(box, alive) {
   box.replaceChildren(h('h2', { text: 'Voting & community settings' }),
     h('div', { class: 'metrics' }, h('div', { class: 'metric' }, h('b', { text: String(v) }), h('span', { text: 'TOTAL VOTES' })), h('div', { class: 'metric' }, h('b', { text: String(c) }), h('span', { text: 'VISIBLE COMMENTS' }))),
     h('div', { class: 'panel shadow' }, ...defs.map(([k, t, d]) => { checks[k] = h('input', { type: 'checkbox', checked: !!s[k] }); return h('label', { class: 'switch-row' }, checks[k], h('span', {}, h('b', { text: t }), h('small', { text: d }))); }),
-      h('label', { class: 'field', style: 'margin-top:16px;max-width:420px' }, h('span', { text: 'DEFAULT GALLERY SORTING' }), sort), err, save));
+      h('label', { class: 'field', style: 'margin-top:16px;max-width:420px' }, h('span', { text: 'DEFAULT GALLERY SORTING' }), sort), err, save),
+    h('div', { class: 'panel shadow', style: 'margin-top:22px' }, h('span', { class: 'tiny-heading', text: 'BACKUP' }),
+      h('p', { class: 'hint', text: 'Download all postcards, frames, comments and votes as a JSON file (no emails or passwords). Do this now and then — the free Supabase plan can pause an inactive project.' }),
+      (() => { const b = h('button', { class: 'box-button', type: 'button', text: '↓ DOWNLOAD BACKUP (JSON)' }); b.addEventListener('click', () => downloadBackup(b)); return b; })()));
 }
 
 /* ---------- ACTIVITY ---------- */

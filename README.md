@@ -11,6 +11,7 @@ assets/app.js         galeri, vote, komentar, spotlight, login anggota, ekspor P
 assets/admin.js       panel admin (overview, postcards, Frame Studio, komentar, settings, activity)
 sql/01_schema.sql     skema + RLS + fungsi + storage (non-destruktif, semua objek berawalan ef_)
 sql/02_admin_setup.sql  menjadikan satu akun sebagai admin
+sql/05_profile_link.sql  kolom `profile_url` (username jadi tautan) + ef_gallery() terbaru; jalankan setelah 04
 sql/04_frame_custom_layout.sql  kolom `custom` (posisi stiker hasil drag di Frame Studio); jalankan setelah 03
 sql/03_y2k_frames.sql   kolom & 6 preset frame Y2K (collage/photobooth/stiker/halftone); jalankan setelah 01, aman diulang
 assets/decor.js         bentuk stiker (bintang, hati, kancing, pita, kupu-kupu) — dipakai tampilan web & PNG
@@ -28,6 +29,14 @@ tests/                uji RLS di Postgres lokal (stub Supabase)
 7. Masuk lewat tombol **Admin** → tab **Postcards** → *Edit* tiap anggota → unggah foto asli (JPG/PNG/WebP, maks 5 MB). Foto tidak pernah diubah otomatis.
 8. **QR code**: isi `SITE_URL` di `assets/config.js` dengan alamat GitHub Pages (mis. `https://<user>.github.io/<repo>/`). QR di setiap postcard (dan di PNG unduhan) mengarah ke `SITE_URL#card/<slug>`. Jika kosong, memakai alamat halaman saat QR dibuat — jangan unduh dari `localhost`/preview. QR dibuat di browser (pustaka `assets/qr.js`, MIT), tanpa layanan luar.
 9. Deploy: push folder ini ke GitHub, aktifkan Pages.
+
+## Fitur tambahan
+- **Link profil**: isi *Profile link* (https) di Postcards → Edit; username di kartu jadi tautan (`rel=noopener noreferrer nofollow`).
+- **Lupa password** untuk anggota (email reset dari Supabase Auth). Pastikan *Site URL* di Auth sudah benar.
+- **About & house rules**: aturan vote/komentar dan ringkasan privasi. Isi `LECTURER` / `CONTACT` di `assets/config.js` bila ingin menampilkan dosen/kontak (kosong = tidak tampil).
+- **Pratinjau share** (Open Graph) memakai `assets/og-image.png`; berlaku untuk seluruh situs, bukan per-kartu (situs statis).
+- **Backup**: Admin → Settings → *Download backup (JSON)* (tanpa email/password).
+- Unduhan di iPhone/iPad memakai share sheet ("Save Image") bila tersedia.
 
 ## Data asli yang dijaga
 Seed hanya berisi 8 anggota dari desain Canva (nama, username, mood, preset frame, teks border "Farfalla" milik Anisa). Foto **sengaja kosong** (tampil "PHOTO PENDING") karena gambar `canva://` tidak bisa diekspor otomatis — unggah dari panel admin. `on conflict do nothing` berarti menjalankan ulang skema tidak menimpa data yang sudah Anda ubah.

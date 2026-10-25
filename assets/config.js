@@ -14,5 +14,9 @@ window.EFS_CONFIG = {
   SITE_URL: "https://kuesionerkanasa-hue.github.io/teamsixstudio/",
 
   // Sesi admin otomatis keluar setelah sekian menit tanpa aktivitas di panel.
+  // Opsional — tampil di bagian About jika diisi (kosong = tidak ditampilkan).
+  LECTURER: "",        // mis. "Dosen pengampu: Nama Dosen, M.A.P."
+  CONTACT: "",         // mis. "Hubungi admin: email@contoh.com"
+
   ADMIN_IDLE_MINUTES: 30
 };

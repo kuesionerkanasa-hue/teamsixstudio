@@ -8,7 +8,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR
 const frames = [['bubble-pop', 'Bubble Pop', '#FA78CF'], ['cyber-grid', 'Cyber Grid', '#C9FF38'], ['chrome-kiss', 'Chrome Kiss', '#84AEF8'], ['sugar-rush', 'Sugar Rush', '#FFE36C'], ['violet-web', 'Violet Web', '#C8A1FF'], ['tangerine', 'Tangerine', '#FF9858'], ['liquid-metal', 'Liquid Metal', '#C8CDD5'], ['cherry-byte', 'Cherry Byte', '#FF5E6C']]
   .map(([id, name, bg], i) => ({ id, name, bg, border: '#17151C', accent: '#17151C', text_color: '#17151C', star: '#FFE36C', shadow: '#17151C', radius: 0, pattern: 'none', sort_order: i + 1, is_active: true, ...([{ layout: 'collage', decor: 'mix', big_shape: 'star', halftone: true, pattern: 'dots', deco1: '#FA78CF', deco2: '#FFFFFF' }, { layout: 'booth', decor: 'buttons', halftone: true, pattern: 'gingham', deco1: '#84AEF8', deco2: '#FFFFFF' }, { layout: 'collage', decor: 'stars', big_shape: 'burst', pattern: 'grid', deco1: '#FFE36C', deco2: '#FA78CF' }, { layout: 'booth', decor: 'bows', pattern: 'checker', deco1: '#FA78CF', deco2: '#FFE36C' }][i] || {}) }));
 const people = [['anisa-fatimah', 'Anisa Fatimah', '@nolvless_00', 'Farfalla', 'Living on cloud nine; serene'], ['arjunna', 'Arjunna', '@2007.arj', null, 'Dreams over doubts'], ['leni-vale', 'Leni Vale', '@leni.mp3', null, 'Main character energy'], ['faye-bloom', 'Faye Bloom', '@faye.bloom', null, 'Sweet but offline'], ['ivo-day', 'Ivo Day', '@ivo.day', null, 'A little magic in the margins'], ['jess-melo', 'Jess Melo', '@jess.zip', null, 'Too bright to hide'], ['santi-noor', 'Santi Noor', '@santi.sys', null, 'Future nostalgia'], ['kira-nova', 'Kira Nova', '@kira.exe', null, 'Glitter in the cache']];
-let gallery = people.map(([slug, display_name, handle, energy_label, mood_quote], i) => ({ id: '00000000-0000-4000-8000-00000000000' + (i + 1), slug, display_name, handle, energy_label, mood_quote, photo_url: i === 0 ? 'https://photos.test/a.png' : null, frame_id: frames[i].id, status: 'published', sort_order: i + 1, created_at: '2026-10-20T10:00:00Z', vote_count: 0, comment_count: 0, voted: false }));
+let gallery = people.map(([slug, display_name, handle, energy_label, mood_quote], i) => ({ id: '00000000-0000-4000-8000-00000000000' + (i + 1), slug, display_name, handle, energy_label, mood_quote, photo_url: i === 0 ? 'https://photos.test/a.png' : null, profile_url: i === 0 ? 'https://instagram.com/nolvless_00' : (i === 1 ? 'javascript:alert(1)' : null), frame_id: frames[i].id, status: 'published', sort_order: i + 1, created_at: '2026-10-20T10:00:00Z', vote_count: 0, comment_count: 0, voted: false }));
 let comments = [];
 const ADMIN = { id: '11111111-1111-4111-8111-111111111111', email: 'admin@x.test' };
 let signedIn = null, isAdminUser = false; const log = []; const errors = [];
@@ -98,6 +98,11 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   ok('hash #card/leni-vale memilih kartu', (await page.textContent('#detail h3')).includes('Leni Vale'));
 
   // ---------- login anggota, vote, komentar + XSS ----------
+  await page.click('#member-btn');
+  ok('modal login punya tautan Forgot password', (await page.locator('.modal button:has-text("Forgot your password")').count()) === 1);
+  await page.click('.modal button:has-text("Forgot your password")');
+  ok('Forgot password membuka form reset', (await page.textContent('#modal-title')) === 'Reset your password');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   await page.click('#member-btn'); await page.fill('.modal input[type=email]', 'user@x.test'); await page.fill('#m-pw', 'wrongpass'); await page.click('.modal .submit');
   await page.waitForSelector('.err-line:not(:empty)');
   ok('login salah: pesan umum', /Incorrect email or password/.test(await page.textContent('.err-line')));
@@ -121,6 +126,10 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('#download-look')]);
   ok('unduh PNG postcard berjalan', !!dl && /postcard-.*\.png$/.test(dl.suggestedFilename()), dl ? dl.suggestedFilename() : 'no download');
   if (dl) { await dl.saveAs(OUT + '/exported-postcard.png'); }
+  ok('link profil https jadi tautan aman', (await page.locator('#gallery-track a.handle-link').count()) === 1 && /noopener/.test(await page.locator('#gallery-track a.handle-link').first().getAttribute('rel')) && (await page.locator('#gallery-track a.handle-link').first().getAttribute('href')) === 'https://instagram.com/nolvless_00');
+  ok('link profil javascript: TIDAK dirender', (await page.locator('a[href^="javascript:"]').count()) === 0);
+  ok('bagian About & aturan tampil', (await page.locator('#about .about-card').count()) === 3 && (await page.locator('.site-nav a[href="#about"]').count()) === 1);
+  ok('pratinjau share (og:image) ada', (await page.locator('meta[property="og:image"]').count()) === 1);
   ok('stiker Y2K tampil di kartu', (await page.locator('#gallery-track .decor .sticker').count()) >= 8);
   ok('QR kecil ada di setiap kartu galeri', (await page.locator('#gallery-track .profile-card .qr-chip img').count()) >= 8);
 
