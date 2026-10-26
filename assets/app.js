@@ -406,6 +406,7 @@ function postcard(card, opts = {}) {
     F.layout === 'booth' ? h('div', { class: 'booth' }, photoNode(card), photoNode(card)) : photoNode(card),
     F.layout === 'collage' ? (() => { const tp = D ? D.tagPos(F) : { x: 6, y: 50 }; const t = h('div', { class: 'paper-tag' + (opts.edit ? ' editable' : ''), text: (card.display_name || '').toUpperCase(), dataset: { id: 't' } }); t.style.left = tp.x + '%'; t.style.top = tp.y + '%'; if (opts.edit) { t.tabIndex = 0; t.setAttribute('role', 'button'); t.setAttribute('aria-label', 'Name label — drag or use arrow keys'); } return t; })() : null,
     D ? D.layer(F, 'front', opts.edit) : null,
+    h('img', { class: 'frame-logo', src: 'assets/logo.png', alt: '', attrs: { 'aria-hidden': 'true' }, decoding: 'async' }),
     h('div', { class: 'portrait-bottom' },
       h('div', { class: 'badges' }, badgesFor(card).map(([t, c]) => h('span', { class: 'tag ' + c, text: t }))),
       opts.detail ? null : voteButton(card)));
@@ -726,6 +727,11 @@ function renderShowcase() {
 function loadImg(url) {
   return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.referrerPolicy = 'no-referrer'; i.onload = () => res(i); i.onerror = () => rej(new Error('img')); i.src = url; });
 }
+let _logoImg;
+function loadLogo() {
+  if (!_logoImg) _logoImg = new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = 'assets/logo.png'; });
+  return _logoImg;
+}
 function wrapLines(ctx, text, max) {
   const out = []; let line = '';
   for (const w of text.split(/\s+/)) { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > max && line) { out.push(line); line = w; } else line = t; }
@@ -735,6 +741,7 @@ async function renderPostcardCanvas(card, frame) {
   const F = normFrame(frame), W = 900, H = 1240, c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d');
   await Promise.all(['800 40px "DM Sans"', '400 40px "DM Sans"', 'italic 400 40px Fraunces', '400 24px "Space Mono"'].map(f => document.fonts.load(f).catch(() => null)));
+  const logoP = loadLogo();
   let photo = null, photoFailed = false; const url = httpsUrl(card.photo_url);
   if (url) { try { photo = await loadImg(url); } catch (e) { photoFailed = true; } }
   x.fillStyle = '#FAF9F5'; x.fillRect(0, 0, W, H);
@@ -788,7 +795,13 @@ async function renderPostcardCanvas(card, frame) {
   }
   if (F.layout === 'classic') {
     x.textAlign = 'left'; x.fillStyle = F.border; x.font = '400 40px "Space Mono"'; x.fillText('◦ ◦ ◦', sx + 20, sy + 52);
-    x.textAlign = 'right'; x.font = '400 120px "DM Sans"'; x.fillStyle = F.border; x.fillText('✳', sx + sw - 8 + 3, sy + 92 + 4); x.fillStyle = F.star; x.fillText('✳', sx + sw - 8, sy + 92);
+  }
+  const logo = await logoP;
+  if (logo) { // logo Tim 6 di ujung kanan atas setiap frame
+    const lw = sw * 0.18, lh = lw * logo.height / logo.width, pad = 6, cx = sx + sw - 22 - (lw + pad * 2), cy = sy + 18;
+    x.fillStyle = 'rgba(255,255,255,.92)'; x.fillRect(cx, cy, lw + pad * 2, lh + pad * 2);
+    x.lineWidth = 3; x.strokeStyle = F.border; x.strokeRect(cx, cy, lw + pad * 2, lh + pad * 2);
+    x.drawImage(logo, cx + pad, cy + pad, lw, lh);
   }
   x.textAlign = 'left';
   // teks

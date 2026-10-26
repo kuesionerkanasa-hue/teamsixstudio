@@ -130,6 +130,7 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   ok('link profil javascript: TIDAK dirender', (await page.locator('a[href^="javascript:"]').count()) === 0);
   ok('bagian About & aturan tampil', (await page.locator('#about .about-card').count()) === 3 && (await page.locator('.site-nav a[href="#about"]').count()) === 1);
   ok('pratinjau share (og:image) ada', (await page.locator('meta[property="og:image"]').count()) === 1);
+  ok('logo Tim 6 ada di setiap frame', (await page.locator('#gallery-track .profile-card .frame-logo').count()) >= 8);
   ok('stiker Y2K tampil di kartu', (await page.locator('#gallery-track .decor .sticker').count()) >= 8);
   ok('QR kecil ada di setiap kartu galeri', (await page.locator('#gallery-track .profile-card .qr-chip img').count()) >= 8);
 
