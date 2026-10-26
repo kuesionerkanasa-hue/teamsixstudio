@@ -28,7 +28,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="assets/favicon-512.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#C9FF38">
-<link rel="stylesheet" href="assets/style.css?v=8">
+<link rel="stylesheet" href="assets/style.css?v=9">
 </head>
 <body>
 <div id="banner" class="banner" hidden role="alert"></div>
@@ -208,9 +208,10 @@
         <article class="about-card">
           <h3>Aturan main</h3>
           <ul>
-            <li>Vote dan komentar butuh akun. <b>Satu akun = satu vote per postcard</b>, dan vote bisa ditarik kembali.</li>
+            <li>Vote dan komentar <b>cukup dengan mengetik nama</b> (mode tamu, tanpa email dan password). Satu browser = satu identitas = <b>satu vote per postcard</b>, dan vote bisa ditarik kembali. Mau lebih permanen? Buat akun.</li>
             <li>Komentar 1–500 karakter, maksimal 5 komentar per menit. Teks tampil apa adanya (tanpa HTML).</li>
             <li>Komentar yang melanggar bisa dilaporkan; admin dapat menyembunyikannya. Pemilik komentar bisa mengubah atau menghapus komentarnya sendiri.</li>
+            <li>Admin dapat mematikan mode tamu bila disalahgunakan. Nama seperti “Admin” atau “Tim 6” dicadangkan.</li>
             <li>Voting/komentar bisa ditutup admin sewaktu-waktu; hitungan yang tampil selalu hasil nyata dari database.</li>
             <li>Foto anggota hanya dipasang atas izin orang yang bersangkutan.</li>
           </ul>
@@ -218,7 +219,7 @@
         <article class="about-card">
           <h3>Privasi</h3>
           <ul>
-            <li><b>Email</b> hanya dipakai untuk login (dikelola Supabase Auth) dan <b>tidak pernah ditampilkan</b> ke publik.</li>
+            <li>Mode tamu <b>tidak meminta email</b>; identitas tamu tersimpan di browser-mu. Jika kamu membuat akun, email hanya dipakai untuk login (dikelola Supabase Auth) dan <b>tidak pernah ditampilkan</b>.</li>
             <li>Yang tampil publik: <b>nama tampilan</b> pilihanmu dan isi komentar. Vote kamu tidak ditampilkan ke orang lain.</li>
             <li>Tidak ada pelacak iklan. Font dimuat dari Google Fonts; pustaka login dari jsDelivr.</li>
             <li>Ingin akun atau komentarmu dihapus? Hapus komentar sendiri lewat tombol di komentar, atau hubungi admin kelompok.</li>
@@ -257,10 +258,10 @@
 <noscript><div class="banner">This site needs JavaScript to load postcards, votes and comments.</div></noscript>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js" integrity="sha384-K1nraABOP/zFehpLIUksXebbs7jMpB8gYMlb+uhVKZcWT/9Vkq1+qhv6ndC+1Yuz" crossorigin="anonymous"></script>
-<script src="assets/config.js?v=8"></script>
-<script src="assets/qr.js?v=8"></script>
-<script src="assets/decor.js?v=8"></script>
-<script src="assets/app.js?v=8"></script>
-<script src="assets/admin.js?v=8"></script>
+<script src="assets/config.js?v=9"></script>
+<script src="assets/qr.js?v=9"></script>
+<script src="assets/decor.js?v=9"></script>
+<script src="assets/app.js?v=9"></script>
+<script src="assets/admin.js?v=9"></script>
 </body>
 </html>

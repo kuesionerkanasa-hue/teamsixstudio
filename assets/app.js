@@ -81,6 +81,8 @@ function errMsg(e) {
   if (/Too many comments/i.test(m)) return 'Too many comments — please wait a moment.';
   if (/Failed to fetch|NetworkError/i.test(m)) return 'Network problem. Please check your connection.';
   if (/rate limit|too many requests|over_email_send_rate_limit|over_request_rate_limit/i.test(m) || e.status === 429) return 'Too many email requests right now. Please wait a few minutes and try again.';
+  if (/anonymous sign-ins are disabled|anonymous_provider_disabled/i.test(m)) return 'Guest mode is not switched on yet. Please sign in or create an account instead.';
+  if (/reserved/i.test(m)) return 'That name is reserved. Please choose another.';
   if (/already registered|already been registered/i.test(m)) return 'That email already has an account. Try signing in instead.';
   return m;
 }
@@ -162,7 +164,7 @@ async function afterSignIn(user) {
 function renderAuthUi() {
   const who = $('#who'), mb = $('#member-btn');
   if (state.user) {
-    who.hidden = false; who.textContent = state.myName || 'Member';
+    who.hidden = false; who.textContent = (state.myName || 'Member') + (state.user.is_anonymous ? ' · guest' : '');
     mb.textContent = 'Sign out';
   } else { who.hidden = true; mb.textContent = 'Sign in'; }
   renderDetailMeta(); renderCommentForm();
@@ -209,6 +211,38 @@ function modalShell(label, title, lead, ...body) {
     h('span', { class: 'modal-label', text: label }),
     h('h2', { id: 'modal-title', text: title }),
     lead ? h('p', { class: 'lead', text: lead }) : null, ...body);
+}
+
+const canGuest = () => state.settings.guest_participation !== false;
+const savedName = () => { try { return localStorage.getItem('efs_guest_name') || ''; } catch (_) { return ''; } };
+const rememberName = n => { try { localStorage.setItem('efs_guest_name', n); } catch (_) { /* noop */ } };
+async function guestSignIn(rawName) {
+  const name = (rawName || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  if (!name) throw new Error('Please type your name first.');
+  let { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    const r = await sb.auth.signInAnonymously({ options: { data: { display_name: name } } });
+    if (r.error) throw r.error; session = r.data.session;
+    if (!session) throw new Error('Guest mode is not switched on yet. Please sign in or create an account instead.');
+  }
+  const p = await sb.rpc('ef_ensure_profile', { p_name: name });
+  if (p.error) throw p.error;
+  rememberName(name);
+  await afterSignIn(session.user);
+}
+function openGuestModal(reason, onDone) {
+  const err = h('p', { class: 'err-line', attrs: { role: 'alert' } });
+  const name = h('input', { type: 'text', required: true, maxLength: 40, value: savedName(), autocomplete: 'nickname', placeholder: 'e.g. Rani' });
+  const submit = h('button', { class: 'submit', type: 'submit' }, h('span', { text: 'Continue' }), h('span', { text: '→' }));
+  const form = h('form', { on: { submit: async e => {
+    e.preventDefault(); err.textContent = ''; submit.disabled = true; submit.firstChild.textContent = 'Please wait…';
+    try { await guestSignIn(name.value); closeModal(); toast('Welcome, ' + (state.myName || name.value.trim()) + '!'); if (onDone) onDone(); }
+    catch (ex) { err.textContent = errMsg(ex); }
+    finally { submit.disabled = false; submit.firstChild.textContent = 'Continue'; }
+  } } }, h('label', { class: 'field' }, h('span', { text: 'YOUR NAME (SHOWN PUBLICLY)' }), name), err, submit);
+  const have = h('p', { class: 'switch' }, h('button', { class: 'link-btn', type: 'button', text: 'I already have an account — sign in', on: { click: () => openMemberModal(reason) } }));
+  openModal(modalShell('JUST YOUR NAME', 'Join in with a name', reason || 'No email or password needed. Your name appears next to your votes and comments.', form, have));
+  name.focus();
 }
 
 function openMemberModal(reason) {
@@ -498,7 +532,12 @@ async function shareCard(card) {
 
 /* ---------- vote ---------- */
 async function toggleVote(card) {
-  if (!state.user) { openMemberModal('Sign in to vote for ' + card.display_name + '.'); return; }
+  if (!state.user) {
+    const again = () => { const c = state.cards.find(x => x.slug === card.slug); if (c) toggleVote(c); };
+    if (canGuest()) openGuestModal('Pick a name to vote for ' + card.display_name + '. No email or password needed.', again);
+    else openMemberModal('Sign in to vote for ' + card.display_name + '.');
+    return;
+  }
   if (!card.voted && !state.settings.voting_enabled) { toast('Voting is currently closed.', true); return; }
   const was = card.voted;
   card.voted = !was; card.vote_count += was ? -1 : 1;
@@ -596,11 +635,13 @@ function renderCommentForm() {
   head.textContent = 'COMMENTS · ' + card.comment_count;
   form.replaceChildren();
   if (!state.settings.comments_enabled) { form.append(h('div', { class: 'empty', text: 'Comments are closed for now. Existing comments stay visible.' })); return; }
-  if (!state.user) {
+  const guest = !state.user;
+  if (guest && !canGuest()) {
     form.append(h('div', { class: 'comment-form' }, h('p', { class: 'hint', text: 'Sign in to join the conversation.' }),
       h('button', { class: 'box-button solid', type: 'button', text: 'SIGN IN TO COMMENT', on: { click: () => openMemberModal('Sign in to comment on ' + card.display_name + '’s postcard.') } })));
     return;
   }
+  const nameIn = guest ? h('input', { type: 'text', maxLength: 40, required: true, value: savedName(), autocomplete: 'nickname', placeholder: 'Your name (shown with your comment)', attrs: { 'aria-label': 'Your name' } }) : null;
   const ta = h('textarea', { maxLength: 500, placeholder: 'Write something kind and honest…', attrs: { 'aria-label': 'Your comment', rows: 3 } });
   const left = h('span', { class: 'hint', text: '500 left' });
   const btn = h('button', { class: 'box-button solid', type: 'submit', text: 'POST COMMENT' });
@@ -609,6 +650,10 @@ function renderCommentForm() {
     e.preventDefault();
     const body = ta.value.trim(); if (!body) { toast('Write something first.', true); return; }
     btn.disabled = true; btn.textContent = 'POSTING…';
+    if (guest) {
+      try { await guestSignIn(nameIn.value); }
+      catch (ex) { btn.disabled = false; btn.textContent = 'POST COMMENT'; toast(errMsg(ex), true); return; }
+    }
     const r = await sb.from('ef_comments').insert({ profile_id: card.id, body })
       .select('id,body,status,created_at,updated_at,user_id,ef_user_profiles(display_name)').single();
     btn.disabled = false; btn.textContent = 'POST COMMENT';
@@ -619,7 +664,7 @@ function renderCommentForm() {
     state.comments.unshift(r.data); renderCommentList();
     toast(r.data.status === 'pending' ? 'Thanks — your comment is waiting for moderator approval.' : 'Comment posted.');
     refreshSoon();
-  } } }, ta, h('div', { class: 'row' }, left, btn)));
+  } } }, nameIn ? h('label', { class: 'field' }, h('span', { text: 'YOUR NAME — NO LOGIN NEEDED' }), nameIn) : null, ta, h('div', { class: 'row' }, left, btn)));
 }
 async function loadComments(reset) {
   const card = selected(); if (!card || !state.dbReady) return;
@@ -856,7 +901,10 @@ $('#shuffle').addEventListener('click', () => {
 });
 $('#unshuffle').addEventListener('click', () => { state.shuffled = false; state.order = null; $('#unshuffle').hidden = true; $('#shuffle-note').hidden = true; renderGallery(); });
 $('#member-btn').addEventListener('click', async () => {
-  if (state.user) { await sb.auth.signOut(); toast('Signed out.'); } else openMemberModal();
+  if (state.user) {
+    if (state.user.is_anonymous && !confirm('Leave guest mode? Your guest identity only lives in this browser, so you will not be able to edit your comments or take back your votes afterwards.')) return;
+    await sb.auth.signOut(); toast('Signed out.');
+  } else openMemberModal();
 });
 $('#admin-btn').addEventListener('click', () => { if (state.isAdmin && state.user) EFS.admin.open(); else openAdminModal(); });
 $('#gallery-viewport').addEventListener('keydown', e => { if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1); });

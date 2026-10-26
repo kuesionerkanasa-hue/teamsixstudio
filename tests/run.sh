@@ -20,6 +20,9 @@ psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/04_frame_custom_layout.sql 2>&1 | grep
 echo "== jalankan 05_profile_link.sql (dua kali)"
 psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/05_profile_link.sql 2>&1 | grep -v '^NOTICE' || true
 psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/05_profile_link.sql 2>&1 | grep -v '^NOTICE' || true
+echo "== jalankan 06_guest_participation.sql (dua kali)"
+psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/06_guest_participation.sql 2>&1 | grep -v '^NOTICE' || true
+psql -qX -v ON_ERROR_STOP=1 -d $DB -f sql/06_guest_participation.sql 2>&1 | grep -v '^NOTICE' || true
 psql -qX -d $DB -Atc "select 'profil='||count(*) from public.ef_profiles union all select 'frame='||count(*) from public.ef_frames union all select 'settings='||count(*) from public.ef_settings"
 echo "== uji RLS"
 psql -qX -d $DB -f tests/rls_tests.sql

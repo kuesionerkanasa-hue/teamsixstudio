@@ -475,6 +475,7 @@ async function settings(box, alive) {
   const r = await sb.from('ef_settings').select('*').eq('id', 1).single(); if (r.error) throw r.error; if (!alive()) return;
   const s = { ...r.data }; const [v, c] = await Promise.all([countOf(sb.from('ef_votes').select('id', { count: 'exact', head: true })), countOf(sb.from('ef_comments').select('id', { count: 'exact', head: true }).eq('status', 'visible'))]);
   const defs = [['voting_enabled', 'Accept new votes', 'When off, the database rejects new votes — hiding the button is not what enforces it.'],
+    ['guest_participation', 'Allow guests (name only, no login)', 'Visitors can vote and comment by typing a name; each browser is one identity. Turn this off if someone abuses it — new guests are then rejected by the database.'],
     ['comments_enabled', 'Accept new comments', 'When off, the database rejects new comments. Existing comments stay visible.'],
     ['comments_need_approval', 'Require approval for new comments', 'New member comments wait as PENDING until you approve them in Comments.'],
     ['spotlight_enabled', 'Show the Community Spotlight section', 'Hides the section and its navigation link on the public site.'],

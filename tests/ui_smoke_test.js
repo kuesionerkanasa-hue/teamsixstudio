@@ -41,6 +41,10 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
         isAdminUser = body.email === 'admin@x.test';
         return J(route, { access_token: jwt(signedIn.id), token_type: 'bearer', expires_in: 3600, expires_at: 4102444800, refresh_token: 'r', user: { id: signedIn.id, aud: 'authenticated', role: 'authenticated', email: signedIn.email, user_metadata: {}, app_metadata: {}, created_at: '2026-01-01T00:00:00Z' } });
       }
+      if (p === '/auth/v1/signup' && !body.email) { // login anonim (mode tamu)
+        signedIn = { id: '33333333-3333-4333-8333-333333333333', email: null }; isAdminUser = false; log.push('GUEST-SIGNIN');
+        return J(route, { access_token: jwt(signedIn.id), token_type: 'bearer', expires_in: 3600, expires_at: 4102444800, refresh_token: 'rg', user: { id: signedIn.id, aud: 'authenticated', role: 'authenticated', is_anonymous: true, user_metadata: body.data || {}, app_metadata: {}, created_at: '2026-01-01T00:00:00Z' } });
+      }
       if (p.startsWith('/auth/v1/logout')) { signedIn = null; isAdminUser = false; return route.fulfill({ status: 204, headers: cors }); }
       if (p.startsWith('/auth/v1/')) return J(route, {});
       if (p === '/rest/v1/rpc/ef_gallery') return J(route, gallery);
@@ -86,11 +90,22 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   await page.click('#unshuffle');
   ok('reset order: urutan kembali', before === await page.locator('#gallery-track .profile-card').evaluateAll(n => n.map(x => x.dataset.slug).join()));
 
-  // vote tanpa login -> modal
+  // vote tanpa login -> modal tamu (cukup nama)
+  page.on('dialog', d => d.accept());
   await page.locator('#gallery-track .vote-btn').first().click();
-  ok('vote tanpa login membuka modal masuk', await page.isVisible('.modal-label:has-text("MEMBER ACCESS")'));
+  ok('vote tanpa login membuka modal nama (mode tamu)', await page.isVisible('.modal-label:has-text("JUST YOUR NAME")'));
+  ok('modal tamu menyediakan jalan ke login akun', (await page.locator('.modal button:has-text("I already have an account")').count()) === 1);
   await page.keyboard.press('Escape');
   ok('Escape menutup modal', (await page.locator('.overlay').count()) === 0);
+  await page.locator('#gallery-track .vote-btn').first().click();
+  await page.fill('.modal input[type=text]', 'Rani'); await page.click('.modal .submit'); await page.waitForTimeout(900);
+  ok('tamu: login anonim dibuat dengan nama saja (tanpa email/password)', log.includes('GUEST-SIGNIN'));
+  ok('tamu: vote langsung tercatat setelah isi nama', log.some(l => l.startsWith('POST /rest/v1/ef_votes')) && (await page.locator('#gallery-track .vote-btn').first().getAttribute('aria-pressed')) === 'true');
+  ok('tamu: header menandai guest', /guest/.test(await page.textContent('#who')));
+  gallery[0].vote_count = 0; gallery[0].voted = false; // kembalikan data tiruan agar tes berikutnya tidak terpengaruh
+  await page.click('#member-btn'); await page.waitForTimeout(500);
+  ok('tamu: bisa keluar (dengan konfirmasi)', (await page.textContent('#member-btn')) === 'Sign in');
+  ok('komentar tanpa login: ada kolom nama langsung', (await page.locator('.comment-form input[aria-label="Your name"]').count()) === 1);
 
   // hash route
   await page.goto(base + '#card/leni-vale'); await page.waitForSelector('#gallery-track .profile-card');

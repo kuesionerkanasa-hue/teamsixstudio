@@ -134,9 +134,17 @@ select t.back();
 
 -- ---------- D. AKUN ANONYMOUS (bukan anggota) ----------
 select t.login((select id from t.u where name='anonuser'), true);
-select t.expect_err('anonymous-signin: tidak bisa vote', $q$insert into public.ef_votes(profile_id) values ((select id from t.u where name='p:arjunna'))$q$, array['42501']);
-select t.expect_err('anonymous-signin: tidak bisa komentar', $q$insert into public.ef_comments(profile_id,body) values ((select id from t.u where name='p:arjunna'),'hi')$q$, array['42501','23503']);
-select t.expect_err('anonymous-signin: tidak bisa buat profil', $q$select public.ef_ensure_profile('X')$q$, array['42501']);
+select t.expect_val('tamu: ef_is_member() true saat guest_participation aktif', $q$select public.ef_is_member()$q$, 'true');
+select t.expect_val('tamu: bisa membuat nama tampilan', $q$select display_name from public.ef_ensure_profile('Tamu Satu')$q$, 'Tamu Satu');
+select t.expect_err('tamu: nama "Admin" dicadangkan', $q$select public.ef_ensure_profile('  ADMIN ')$q$, array['22023']);
+select t.expect_err('tamu: nama "Tim 6" dicadangkan', $q$select public.ef_ensure_profile('tim 6')$q$, array['22023']);
+select t.expect_rows('tamu: bisa vote', $q$insert into public.ef_votes(profile_id) values ((select id from t.u where name='p:arjunna'))$q$, 1);
+select t.expect_err('tamu: vote ganda ditolak (satu identitas = satu vote)', $q$insert into public.ef_votes(profile_id) values ((select id from t.u where name='p:arjunna'))$q$, array['23505']);
+select t.expect_rows('tamu: bisa komentar', $q$insert into public.ef_comments(profile_id,body) values ((select id from t.u where name='p:arjunna'),'halo dari tamu')$q$, 1);
+select t.expect_rows('tamu: bisa hapus komentar sendiri', $q$delete from public.ef_comments where body='halo dari tamu'$q$, 1);
+select t.expect_rows('tamu: bisa tarik vote sendiri', $q$delete from public.ef_votes$q$, 1);
+select t.expect_rows('tamu: tidak melihat baris ef_admins', $q$select * from public.ef_admins$q$, 0);
+select t.expect_err('tamu: tidak bisa moderasi', $q$select public.ef_moderate_comment(gen_random_uuid(),'hidden')$q$, array['42501']);
 select t.back();
 
 -- ---------- E. VOTING ----------
@@ -198,6 +206,16 @@ select t.expect_err('validasi: pola liar ditolak', $q$update public.ef_frames se
 select t.expect_rows('admin: simpan posisi stiker (custom)', $q$update public.ef_frames set custom='{"s0":{"x":10,"y":20,"size":15,"rot":-5},"t":{"x":8,"y":40}}'::jsonb where id='photobooth'$q$, 1);
 select t.expect_err('validasi: custom bukan object ditolak', $q$update public.ef_frames set custom='[1,2]'::jsonb where id='photobooth'$q$, array['23514']);
 select t.expect_err('validasi: custom terlalu besar ditolak', $q$update public.ef_frames set custom=jsonb_build_object('a', repeat('x', 5000)) where id='photobooth'$q$, array['23514']);
+select t.expect_rows('admin: matikan mode tamu', $q$update public.ef_settings set guest_participation=false$q$, 1);
+select t.back();
+select t.login((select id from t.u where name='anonuser'), true);
+select t.expect_val('tamu OFF: ef_is_member() false', $q$select public.ef_is_member()$q$, 'false');
+select t.expect_err('tamu OFF: tidak bisa vote', $q$insert into public.ef_votes(profile_id) values ((select id from t.u where name='p:arjunna'))$q$, array['42501']);
+select t.expect_err('tamu OFF: tidak bisa komentar', $q$insert into public.ef_comments(profile_id,body) values ((select id from t.u where name='p:arjunna'),'hi')$q$, array['42501','23503']);
+select t.expect_err('tamu OFF: tidak bisa ubah nama', $q$select public.ef_ensure_profile('X')$q$, array['42501']);
+select t.back();
+select t.login((select id from t.u where name='admin'));
+select t.expect_rows('admin: nyalakan lagi mode tamu', $q$update public.ef_settings set guest_participation=true$q$, 1);
 select t.expect_err('validasi: pattern tak dikenal', $q$update public.ef_frames set pattern='x' where id='bubble-pop'$q$, array['23514']);
 select t.expect_err('validasi: photo_url javascript: ditolak', $q$update public.ef_profiles set photo_url='javascript:alert(1)' where slug='arjunna'$q$, array['23514']);
 select t.expect_rows('admin: set profile_url https', $q$update public.ef_profiles set profile_url='https://instagram.com/nolvless_00' where slug='anisa-fatimah'$q$, 1);
@@ -211,7 +229,7 @@ select t.expect_err('integritas: frame yang dipakai tak bisa dihapus', $q$delete
 select t.expect_rows('admin: duplikat frame', $q$insert into public.ef_frames(id,name,bg) select 'bubble-pop-copy','Bubble Pop Copy',bg from public.ef_frames where id='bubble-pop'$q$, 1);
 select t.expect_rows('admin: ubah sort_order profil', $q$update public.ef_profiles set sort_order=sort_order where slug='arjunna'$q$, 1);
 select t.expect_val('audit: update non-status profil tidak dicatat', $q$select count(*) from public.ef_audit where action='profiles.update'$q$, '0');
-select t.expect_rows('admin: baca audit', $q$select * from public.ef_audit$q$, 4);
+select t.expect_rows('admin: baca audit', $q$select * from public.ef_audit$q$, 6);
 select t.expect_rows('storage: admin boleh upload foto', $q$insert into storage.objects(bucket_id,name) values ('ef-photos','a.png')$q$, 1);
 select t.back();
 select t.login((select id from t.u where name='m1'));
@@ -234,7 +252,7 @@ select t.expect_err('flag: vote ditolak DB saat voting dimatikan', $q$insert int
 select t.back();
 select t.login((select id from t.u where name='admin'));
 select t.expect_rows('flag: admin nyalakan voting', $q$update public.ef_settings set voting_enabled=true$q$, 1);
-select t.expect_val('flag: perubahan settings dicatat audit', $q$select count(*) from public.ef_audit where action='settings.update'$q$, '2');
+select t.expect_val('flag: perubahan settings dicatat audit', $q$select count(*) from public.ef_audit where action='settings.update'$q$, '4');
 select t.expect_rows('flag: admin matikan komentar', $q$update public.ef_settings set comments_enabled=false$q$, 1);
 select t.back();
 select t.login((select id from t.u where name='m1'));
