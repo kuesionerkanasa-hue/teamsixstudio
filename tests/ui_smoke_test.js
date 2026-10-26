@@ -129,6 +129,7 @@ const J = (route, body, status = 200, extra = {}) => route.fulfill({ status, hea
   ok('link profil https jadi tautan aman', (await page.locator('#gallery-track a.handle-link').count()) === 1 && /noopener/.test(await page.locator('#gallery-track a.handle-link').first().getAttribute('rel')) && (await page.locator('#gallery-track a.handle-link').first().getAttribute('href')) === 'https://instagram.com/nolvless_00');
   ok('link profil javascript: TIDAK dirender', (await page.locator('a[href^="javascript:"]').count()) === 0);
   ok('bagian About & aturan tampil', (await page.locator('#about .about-card').count()) === 3 && (await page.locator('.site-nav a[href="#about"]').count()) === 1);
+  ok('foto grup di hero + daftar 8 anggota di About', (await page.locator('.hero-photo img').count()) === 1 && (await page.locator('.about-members li').count()) === 8);
   ok('pratinjau share (og:image) ada', (await page.locator('meta[property="og:image"]').count()) === 1);
   ok('logo Tim 6 ada di setiap frame', (await page.locator('#gallery-track .profile-card .frame-logo').count()) >= 8);
   ok('stiker Y2K tampil di kartu', (await page.locator('#gallery-track .decor .sticker').count()) >= 8);

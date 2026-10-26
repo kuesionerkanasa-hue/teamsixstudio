@@ -397,3 +397,30 @@ table.data .thumb{width:40px;height:46px;padding:3px}
 
 /* logo Tim 6 di ujung kanan atas setiap frame */
 .frame-logo{position:absolute;top:2.25%;right:2.7%;width:18%;height:auto;z-index:4;background:rgba(255,255,255,.92);border:1px solid var(--bd);padding:2px;pointer-events:none;display:block}
+
+/* foto grup di hero */
+.hero-photo{position:absolute;right:0;top:64px;width:min(38%,540px);margin:0;background:var(--card);border:3px solid var(--ink);box-shadow:9px 9px 0 var(--ink);transform:rotate(1.6deg);z-index:1}
+.hero-photo img{display:block;width:100%;height:auto}
+.hero-photo figcaption{padding:9px 12px 10px;font:11px var(--f-mono);letter-spacing:.09em;border-top:3px solid var(--ink)}
+.hero-photo .star-one{left:-20px;right:auto;top:-24px;font-size:40px}
+.hero-photo .star-two{right:-14px;left:auto;top:auto;bottom:46px;font-size:26px}
+.hero-inner{min-height:560px}
+.hero h1{position:relative;z-index:2;font-size:clamp(46px,6.6vw,110px)}
+.hero-bottom{justify-content:flex-start}
+@media (max-width:900px){.hero h1{font-size:7vw}}
+@media (max-width:720px){
+  .hero-photo{position:relative;top:auto;right:auto;width:calc(100% - 12px);margin:30px 6px 4px;transform:rotate(1deg);box-shadow:6px 6px 0 var(--ink)}
+  .hero h1{font-size:clamp(46px,13vw,72px)}
+  .hero-inner{min-height:0;padding-bottom:70px}
+}
+/* About: cerita + anggota */
+.about-hero{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(220px,1fr);gap:18px;margin:8px 0 18px}
+.about-story,.about-members{background:var(--card);border:1px solid var(--ink);padding:24px 26px;box-shadow:5px 5px 0 var(--ink)}
+.about-story h3{margin:4px 0 12px;font:500 italic clamp(30px,4vw,46px)/1 var(--f-serif);letter-spacing:-.03em}
+.about-story p{font-size:15px;line-height:1.7;margin:0 0 12px}
+.about-kicker{font:11px var(--f-mono)!important;letter-spacing:.14em;background:var(--lime);display:inline-block;padding:5px 9px;border:1px solid var(--ink)}
+.about-members{background:var(--lime)}
+.about-members h3{margin:0 0 10px;font:800 20px var(--f-sans);letter-spacing:-.02em}
+.about-members ol{margin:0;padding-left:22px;display:grid;gap:7px;font-size:15px}
+.about-note{font:11px var(--f-mono);margin:14px 0 0;opacity:.75}
+@media (max-width:720px){.about-hero{grid-template-columns:1fr}}
