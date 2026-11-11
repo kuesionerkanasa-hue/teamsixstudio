@@ -75,3 +75,6 @@ Menjalankan skema dua kali (cek idempoten) lalu 148 pengecekan izin/RLS: anon vs
 - Realtime komentar memakai `supabase_realtime`; jika tidak aktif, galeri tetap menyegarkan diri tiap 60 detik.
 - Skrip supabase-js dipasang dengan SRI. Jika CDN menyajikan berkas berbeda, hapus atribut `integrity` di `index.html` atau hosting salinan lokal.
 - Ekspor gambar memakai canvas; foto dari domain lain harus mengizinkan CORS (bucket Supabase mengizinkan). Jika gagal, gambar tetap diunduh tanpa foto dan Anda diberi tahu.
+
+## Task (presentasi)
+`/task/` berisi presentasi kelompok yang dijalankan lewat website. Tugas 1: `task/transparansi/` (11 slide, transisi berbeda tiap slide, infografis klik, pencarian, daftar slide, layar penuh, laser pointer; pintasan tekan `?`). Konten slide dari PPT; penjelasan detail di jendela klik adalah tambahan tim dan diberi label.
