@@ -3,8 +3,11 @@
 const $ = (s, r = document) => r.querySelector(s);
 const IMG = '../assets/img/';
 const el = (tag, cls, text, st, at) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; if (st) e.style.cssText = st; if (at) for (const k in at) e.setAttribute(k, at[k]); return e; };
-const img = (n, st, cls, d, a) => { const i = el('img', cls || 'abs', null, st, { src: IMG + n, alt: '', draggable: 'false' }); if (a) { i.dataset.a = a; i.style.setProperty('--d', d || 0); } return i; };
-const TEAM = [['Fahrul Rozi', 'fahrul'], ['Icha', 'icha'], ['Jessica', 'jessica'], ['Santi Hagai Sirombing', 'santi'], ['Khairina', 'khairina'], ['Anisa Fatimah', 'anisa'], ['Arjunna', 'arjunna'], ['Arya Hendrik Pamorja', 'arya']];
+const img = (n, st, cls, d, a) => {
+ if (cls && cls.indexOf('cat') === 0) { const w = el('div', 'cat-w', null, st); const hs = /(^|;)\s*height:/.test(st); const i = el('img', cls.indexOf('float') > 0 ? 'cat-i float' : 'cat-i', null, hs ? 'height:100%;width:auto' : 'width:100%;height:auto', { src: IMG + n, alt: '', draggable: 'false' }); w.append(i); if (a) { w.dataset.a = a; w.style.setProperty('--d', d || 0); } if (cls.indexOf('float') > 0) i.style.animationDelay = (-(d || 0) % 5) / 1 + 'ms'; return w; }
+ const i = el('img', cls || 'abs', null, st, { src: IMG + n, alt: '', draggable: 'false' }); if (a) { i.dataset.a = a; i.style.setProperty('--d', d || 0); } return i; };
+const foot = (name, cap, st, d) => { const f = el('figure', 'foot', null, st); f.dataset.a = 'pop'; f.style.setProperty('--d', d || 900); const i = el('img', null, null, null, { alt: cap, draggable: 'false' }); const ex = ['jpg', 'svg']; let k = 0; const nx = () => { if (k < ex.length) i.src = '../assets/footage/' + name + '.' + ex[k++]; }; i.onerror = nx; nx(); f.append(i, el('figcaption', null, cap)); return f; };
+const TEAM = [['Fahrul Fahlevi', 'fahrul'], ['Icha Ayudiany', 'icha'], ['Jessica Amelia', 'jessica'], ['Santi Hagai Sihombing', 'santi'], ['Khairina Nor Hafifah', 'khairina'], ['Annisa Fatimah', 'anisa'], ['Arjunna', 'arjunna'], ['Arya Hendrik Pamorja', 'arya']];
 
 /* ---------- konten utama (dari PPT) + tambahan (diberi label) ---------- */
 const Q = [
@@ -104,6 +107,7 @@ add('Studi Kasus', 'studi kasus masyarakat meminta informasi anggaran pembanguna
  Q.forEach(([q, sl], i) => { const bt = el('button', 'chip', null, 'text-align:left;font-size:21px;border-radius:18px;padding:8px 18px'); bt.dataset.a = 'left'; bt.style.setProperty('--d', 900 + i * 140); bt.append(el('span', 'num', String(i + 1), 'margin-right:4px'), document.createTextNode(q), el('small', null, 'SLIDE ' + sl)); bt.addEventListener('click', e => { e.stopPropagation(); go(sl - 1); }); box.append(bt); });
  s.append(box);
  s.append(img('cat-magnifier.webp', 'right:110px;top:170px;width:620px;z-index:3', 'cat float', 300, 'rise'));
+ s.append(foot('balai-desa','Balai desa: pusat informasi warga','left:1060px;top:570px;width:190px',1100));
  s.append(cta('🔍 Alur kasus', () => win('case')));
 });
 /* 4 PENTINGNYA */
@@ -118,6 +122,7 @@ add('Pentingnya Transparansi dan Akuntabilitas dalam Good Governance', 'pentingn
  b.append(el('p', null, 'Jika dikaitkan dengan kasus, penolakan pemerintah desa memberikan informasi anggaran pembangunan menutup akses warga untuk mengetahui dan mengawasi penggunaan dana desa. Kondisi ini bertentangan dengan prinsip transparansi.', 'font-size:20px'));
  s.append(b);
  s.append(img('cat-keyboard.webp', 'left:60px;bottom:120px;width:460px;z-index:3', 'cat float', 300, 'rise'));
+ s.append(foot('papan-informasi','Papan informasi APBDes','left:560px;top:590px;width:190px',1000));
  s.append(img('grass.webp', 'left:0;bottom:90px;width:1600px;z-index:1', 'abs'));
 });
 /* 5 ETIKA */
@@ -163,6 +168,7 @@ add('Pencegahan Manipulasi Laporan Kinerja dan Laporan Keuangan Pemerintah', 'pe
  LAYER.forEach((l, i) => { const c = el('button', 'chip', null, `background:${l[2]};font-size:26px;border-radius:18px;padding:16px 24px;justify-content:space-between;margin-left:${i * 30}px`); c.dataset.a = 'right'; c.style.setProperty('--d', 700 + i * 180); c.append(el('span', null, (i + 1) + '. ' + l[0]), el('small', null, 'KLIK')); c.addEventListener('click', e => { e.stopPropagation(); win('layer', i); }); st.append(c); });
  s.append(st);
  s.append(img('cat-peek.webp', 'right:130px;top:580px;width:300px;z-index:3', 'cat float', 1000, 'pop'));
+ s.append(foot('laporan-keuangan','Laporan keuangan yang diperiksa','right:560px;top:575px;width:190px',1100));
 });
 /* 8 PENYELESAIAN */
 add('Penyelesaian Kasus', 'penyelesaian kasus permintaan tertulis keberatan BPD camat inspektorat komisi informasi APBDes papan informasi musyawarah desa', s => {
@@ -175,6 +181,7 @@ add('Penyelesaian Kasus', 'penyelesaian kasus permintaan tertulis keberatan BPD 
  const r = el('div', 'abs', null, 'left:860px;top:340px;width:660px;display:grid;gap:10px;z-index:6');
  DESA.forEach((w, i) => r.append(chip(w[0], '' + (i + 1), 'text-align:left;font-size:20px;border-radius:14px;justify-content:space-between;background:#FFE68A', () => win('solve', 4 + i), 900 + i * 130))); s.append(r);
  s.append(img('cat-lying.webp', 'left:820px;top:590px;width:400px;z-index:3', 'cat', 1200, 'rise'));
+ s.append(foot('musyawarah-desa','Musyawarah desa','left:100px;top:585px;width:190px',1300));
  s.append(cta('🪜 Tangga penyelesaian', () => win('solve', 'ladder')));
 });
 /* 9 KESIMPULAN */

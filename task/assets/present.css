@@ -24,8 +24,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ttl .w>i{display:inline-block;font-style:inherit}
 .abs{position:absolute}
 .cat{position:absolute;z-index:3;cursor:pointer;filter:drop-shadow(0 8px 10px #0003);-webkit-user-drag:none}
-.cat.float{animation:bob 4.2s ease-in-out infinite}
-@keyframes bob{50%{transform:translateY(-12px) rotate(1.2deg)}}
+.cat-i{display:block;max-width:none;filter:drop-shadow(0 8px 10px #0003);will-change:transform;backface-visibility:hidden}
+.cat-i.float{animation:bob 7s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes bob{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-14px,0)}}
+.cat-w{position:absolute;z-index:3;cursor:pointer}
+.foot{position:absolute;margin:0;z-index:4;background:#fff;padding:8px 8px 6px;border:3px solid #17151C;box-shadow:6px 6px 0 #17151C;transform:rotate(-3deg);width:220px;color:#17151C;transition:transform .3s}
+.foot:hover{transform:rotate(0) scale(1.12);z-index:30}
+.foot img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#ddd}
+.foot figcaption{font:600 13px Inter;text-align:center;margin-top:6px;line-height:1.2}
 .cloud{position:absolute;z-index:1;opacity:.95;-webkit-user-drag:none}
 @keyframes drift{from{transform:translateX(-120px)}to{transform:translateX(120px)}}
 .drift{animation:drift 18s ease-in-out infinite alternate}
@@ -142,3 +148,5 @@ mark{background:var(--yel);padding:0 2px;border-radius:3px}
 #toast{position:absolute;left:50%;bottom:140px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 22px;border-radius:999px;z-index:300;font-weight:600;font-size:20px;opacity:0;pointer-events:none;transition:opacity .3s}
 #toast.show{opacity:1}
 #fx{position:absolute;inset:0;z-index:150;pointer-events:none}
+
+.play .foot[data-a]{opacity:1;animation-fill-mode:backwards}
