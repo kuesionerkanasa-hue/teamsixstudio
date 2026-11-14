@@ -1,0 +1,272 @@
+{
+ "results": [
+  {
+   "name": "galeri: 8 kartu dirender",
+   "ok": true
+  },
+  {
+   "name": "galeri: hitungan nyata 01 / 08",
+   "ok": true
+  },
+  {
+   "name": "teks border asli \"Farfalla\" tampil, lainnya kosong",
+   "ok": true
+  },
+  {
+   "name": "tidak ada tag ONLINE palsu",
+   "ok": true
+  },
+  {
+   "name": "foto https dimuat, lainnya placeholder",
+   "ok": true
+  },
+  {
+   "name": "spotlight: empty-state jujur saat 0 vote",
+   "ok": true
+  },
+  {
+   "name": "tidak ada badge saat 0 vote/komentar",
+   "ok": true
+  },
+  {
+   "name": "komentar: empty state",
+   "ok": true
+  },
+  {
+   "name": "frame collection: 8 preset",
+   "ok": true
+  },
+  {
+   "name": "shuffle: tombol reset muncul",
+   "ok": true
+  },
+  {
+   "name": "reset order: urutan kembali",
+   "ok": true
+  },
+  {
+   "name": "vote tanpa login membuka modal nama (mode tamu)",
+   "ok": true
+  },
+  {
+   "name": "modal tamu menyediakan jalan ke login akun",
+   "ok": true
+  },
+  {
+   "name": "Escape menutup modal",
+   "ok": true
+  },
+  {
+   "name": "tamu: login anonim dibuat dengan nama saja (tanpa email/password)",
+   "ok": true
+  },
+  {
+   "name": "tamu: vote langsung tercatat setelah isi nama",
+   "ok": true
+  },
+  {
+   "name": "tamu: header menandai guest",
+   "ok": true
+  },
+  {
+   "name": "tamu: bisa keluar (dengan konfirmasi)",
+   "ok": true
+  },
+  {
+   "name": "komentar tanpa login: ada kolom nama langsung",
+   "ok": true
+  },
+  {
+   "name": "hash #card/leni-vale memilih kartu",
+   "ok": true
+  },
+  {
+   "name": "modal login punya tautan Forgot password",
+   "ok": true
+  },
+  {
+   "name": "Forgot password membuka form reset",
+   "ok": true
+  },
+  {
+   "name": "login salah: pesan umum",
+   "ok": true
+  },
+  {
+   "name": "login benar: nama tampil, tombol Sign out",
+   "ok": true
+  },
+  {
+   "name": "vote tersimpan: hitungan 1 & tombol pressed",
+   "ok": true
+  },
+  {
+   "name": "badge COMMUNITY FAVORITE hanya karena data nyata",
+   "ok": true
+  },
+  {
+   "name": "spotlight: peringkat 1 Leni Vale",
+   "ok": true
+  },
+  {
+   "name": "vote bisa dibatalkan",
+   "ok": true
+  },
+  {
+   "name": "XSS: payload tampil sebagai teks",
+   "ok": true
+  },
+  {
+   "name": "XSS: tidak ada eksekusi",
+   "ok": true
+  },
+  {
+   "name": "komentar milik sendiri punya EDIT/DELETE",
+   "ok": true
+  },
+  {
+   "name": "unduh PNG postcard berjalan",
+   "ok": true,
+   "detail": "postcard-leni-vale.png"
+  },
+  {
+   "name": "link profil https jadi tautan aman",
+   "ok": true
+  },
+  {
+   "name": "link profil javascript: TIDAK dirender",
+   "ok": true
+  },
+  {
+   "name": "bagian About & aturan tampil",
+   "ok": true
+  },
+  {
+   "name": "foto grup di hero + daftar 8 anggota di About",
+   "ok": true
+  },
+  {
+   "name": "pratinjau share (og:image) ada",
+   "ok": true
+  },
+  {
+   "name": "logo Tim 6 ada di setiap frame",
+   "ok": true
+  },
+  {
+   "name": "stiker Y2K tampil di kartu",
+   "ok": true
+  },
+  {
+   "name": "QR kecil ada di setiap kartu galeri",
+   "ok": true
+  },
+  {
+   "name": "modal admin: label + judul + tombol",
+   "ok": true
+  },
+  {
+   "name": "modal admin: email diminta karena ADMIN_EMAIL kosong",
+   "ok": true
+  },
+  {
+   "name": "admin: password salah ditolak (pesan generik)",
+   "ok": true
+  },
+  {
+   "name": "admin: akun non-admin ditolak & di-sign-out",
+   "ok": true
+  },
+  {
+   "name": "admin: panel terbuka setelah verifikasi peran",
+   "ok": true
+  },
+  {
+   "name": "admin: 6 tab",
+   "ok": true
+  },
+  {
+   "name": "overview: angka nyata (8 published, 0 votes)",
+   "ok": true
+  },
+  {
+   "name": "admin tab POSTCARDS dirender",
+   "ok": true
+  },
+  {
+   "name": "admin tab COMMENTS dirender",
+   "ok": true
+  },
+  {
+   "name": "admin tab SETTINGS dirender",
+   "ok": true
+  },
+  {
+   "name": "admin tab ACTIVITY dirender",
+   "ok": true
+  },
+  {
+   "name": "studio: 8 kontrol warna + hex",
+   "ok": true
+  },
+  {
+   "name": "studio: Save nonaktif sebelum ada perubahan",
+   "ok": true
+  },
+  {
+   "name": "studio: Save aktif setelah warna border diubah (draft)",
+   "ok": true
+  },
+  {
+   "name": "studio: tidak ada PATCH sebelum klik Save",
+   "ok": true
+  },
+  {
+   "name": "studio: hex tidak valid menonaktifkan Save + ditandai",
+   "ok": true
+  },
+  {
+   "name": "studio: PATCH hanya berisi kolom yang berubah",
+   "ok": true,
+   "detail": "{\"border\":\"#84AEF8\"}"
+  },
+  {
+   "name": "studio: duplicate mengirim INSERT frame baru",
+   "ok": true
+  },
+  {
+   "name": "edit layout: stiker bisa dipegang (editable)",
+   "ok": true
+  },
+  {
+   "name": "edit layout: drag memindahkan stiker",
+   "ok": true,
+   "detail": "3%|66% -> 16.2%|73%"
+  },
+  {
+   "name": "edit layout: Save aktif setelah drag (draft)",
+   "ok": true
+  },
+  {
+   "name": "edit layout: PATCH membawa custom posisi stiker",
+   "ok": true,
+   "detail": "{\"custom\":{\"s0\":{\"x\":17.2,\"y\":73,\"size\":30,\"rot\":-12}}}"
+  },
+  {
+   "name": "logout admin menutup panel",
+   "ok": true
+  },
+  {
+   "name": "mobile: tidak ada scroll horizontal halaman",
+   "ok": true,
+   "detail": "390>390"
+  },
+  {
+   "name": "tidak ada error JS/console tak terduga",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "errors": [],
+ "requests": 92
+}
